@@ -2,7 +2,21 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#5D4E37">
+    <meta name="description" content="Sistema de Control de Campanas Parroquiales">
+    
+    <!-- PWA Meta Tags -->
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Campanas">
+    
+    <!-- iOS Icons -->
+    <link rel="apple-touch-icon" href="icon-192.png">
+    <link rel="apple-touch-icon" sizes="152x152" href="icon-192.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="icon-192.png">
+    
     <title>Campanas Parroquiales</title>
     <link rel="stylesheet" href="style.css">
     <link rel="manifest" href="manifest.json">
@@ -10,6 +24,7 @@
 </head>
 <body>
     <div id="app-container">
+        <!-- PANTALLA DE LOGIN -->
         <section id="login-screen" class="screen">
             <div class="logo-area">
                 <div class="circle-logo">
@@ -25,15 +40,18 @@
             </div>
         </section>
 
+        <!-- PANTALLA PRINCIPAL -->
         <section id="home-screen" class="screen hidden">
             <div class="header-control">
                 <h2>🔔 CAMPANAS PARROQUIALES</h2>
             </div>
             
-            <div class="status-bar">
-                <span>Previamente Active Bluetooth</span>
+            <!-- INDICADOR DE BLUETOOTH -->
+            <div class="status-bar" id="bluetooth-status">
+                <span id="bluetooth-status-text">Verificando Bluetooth...</span>
             </div>
 
+            <!-- BOTONES DE CONTROL -->
             <div class="control-grid">
                 <button class="bell-btn" onclick="playAudio('campana1.mp3')">🔔 Primer Toque</button>
                 <button class="bell-btn" onclick="playAudio('campana2.mp3')">🔔 Segundo Toque</button>
@@ -42,6 +60,14 @@
                 <button class="stop-btn" onclick="detenerSonido()">⏹️ DETENER SONIDO</button>
             </div>
 
+            <!-- BOTÓN DE INSTALACIÓN PWA -->
+            <div id="install-container" class="install-box hidden">
+                <button class="install-btn" id="install-button">
+                    📱 INSTALAR EN ESCRITORIO
+                </button>
+            </div>
+
+            <!-- NAVEGACIÓN INFERIOR -->
             <div class="bottom-nav">
                 <div class="nav-item" onclick="abrirAyuda()">
                     <div class="circulo-jl-nav">JL</div>
@@ -51,11 +77,33 @@
             </div>
         </section>
 
+        <!-- PANTALLA DE CONFIGURACIÓN -->
         <section id="config-screen" class="screen hidden">
             <div class="config-header">
                 <button onclick="irAHome()">← Volver</button>
                 <h2>Configuración</h2>
             </div>
+            
+            <!-- SECCIÓN DE BLUETOOTH -->
+            <div class="config-card">
+                <h3>📡 Configuración Bluetooth</h3>
+                <div class="bluetooth-config">
+                    <div class="bluetooth-icon">
+                        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M6.5 6.5l11 11M17.5 6.5l-11 11M12 2v20"/>
+                        </svg>
+                    </div>
+                    <p class="config-description">Ingrese la dirección MAC del dispositivo Bluetooth</p>
+                    <input type="text" id="mac-input" class="mac-input" placeholder="XX:XX:XX:XX:XX:XX" maxlength="17">
+                    <div class="config-buttons">
+                        <button class="main-btn" onclick="guardarMAC()">💾 GUARDAR MAC</button>
+                        <button class="outline-btn" onclick="probarConexionBT()">🔗 PROBAR CONEXIÓN</button>
+                    </div>
+                    <p class="mac-saved hidden" id="mac-saved-text">✅ MAC guardada correctamente</p>
+                </div>
+            </div>
+
+            <!-- SECCIÓN DE SEGURIDAD -->
             <div class="config-card">
                 <h3>🔐 Gestión de Seguridad</h3>
                 <p>El cambio de PIN global requiere conexión a base de datos.</p>
@@ -63,6 +111,7 @@
             </div>
         </section>
 
+        <!-- MODAL DE AYUDA -->
         <div id="help-modal" class="modal-overlay hidden">
             <div class="modal-content">
                 <div class="drag-handle"></div>
@@ -77,6 +126,7 @@
             </div>
         </div>
 
+        <!-- TECLADO NUMÉRICO -->
         <div id="numpad-overlay" class="numpad-sheet">
             <div class="drag-handle"></div>
             <div class="numpad-grid">
@@ -95,6 +145,18 @@
             </div>
         </div>
     </div>
+    
+    <!-- REGISTRO DE SERVICE WORKER -->
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('sw.js')
+                    .then(reg => console.log('Service Worker registrado'))
+                    .catch(err => console.log('Service Worker error:', err));
+            });
+        }
+    </script>
+    
     <script src="app.js"></script>
 </body>
 </html>
