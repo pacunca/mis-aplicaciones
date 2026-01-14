@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Campanas Parroquiales</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="manifest" href="manifest.json">
+    <link rel="icon" href="icono.png">
+</head>
+<body>
+    <div id="app-container">
+        <section id="login-screen" class="screen">
+            <div class="logo-area">
+                <div class="circle-logo">
+                    <img src="icono.png" alt="Icono" id="app-icon">
+                </div>
+                <h1>Campanas Parroquiales</h1>
+                <p class="subtitle">Sistema de Control</p>
+            </div>
+            <div class="login-card">
+                <p>Ingrese el PIN</p>
+                <input type="text" id="pin-display-input" readonly onclick="abrirTeclado()" placeholder="">
+                <button class="main-btn" onclick="verificarAcceso()">INGRESAR</button>
+            </div>
+        </section>
+
+        <section id="home-screen" class="screen hidden">
+            <div class="header-control">
+                <h2>🔔 CAMPANAS PARROQUIALES</h2>
+            </div>
+            
+            <div class="status-bar">
+                <span>Audio Bluetooth Listo</span>
+            </div>
+
+            <div class="control-grid">
+                <button class="bell-btn" onclick="playAudio('campana1.mp3')">🔔 Primer Toque</button>
+                <button class="bell-btn" onclick="playAudio('campana2.mp3')">🔔 Segundo Toque</button>
+                <button class="bell-btn" onclick="playAudio('campana3.mp3')">🔔 Tercer Toque</button>
+                <button class="bell-btn emergency-btn" onclick="confirmarEmergencia()">⚠️ 🚨 EMERGENCIA</button>
+                <button class="bell-btn stop-style" onclick="detenerSonido()">⏹️ DETENER SONIDO</button>
+            </div>
+
+            <div class="bottom-nav">
+                <div class="nav-item" onclick="abrirAyuda()"><strong>JL</strong><br>Ayuda</div>
+                <div class="nav-item admin-pill" onclick="intentarConfiguracion()">⚙️ Admin</div>
+            </div>
+        </section>
+
+        <section id="config-screen" class="screen hidden">
+            <div class="config-header">
+                <button onclick="irAHome()">←</button>
+                <h2>Configuración</h2>
+            </div>
+            <div class="config-card">
+                <h3>🔐 Cambiar PIN de la App</h3>
+                <label>PIN Actual</label>
+                <input type="password" id="pin-actual" placeholder="Ingrese PIN actual">
+                <label>PIN Nuevo</label>
+                <input type="password" id="pin-nuevo" placeholder="Ingrese PIN nuevo">
+                <label>Confirmar PIN</label>
+                <input type="password" id="pin-confirma" placeholder="Confirme PIN nuevo">
+                <button class="main-btn" onclick="cambiarPinApp()">CAMBIAR PIN DE LA APP</button>
+            </div>
+        </section>
+
+        <div id="help-modal" class="modal-overlay hidden">
+            <div class="modal-content">
+                <div class="drag-handle"></div>
+                <h3 class="modal-title">DESCARGAR APLICACIÓN</h3>
+                <div class="qr-box">
+                    <img src="qr_descarga.png" alt="QR de descarga" class="qr-img">
+                </div>
+                <p class="modal-text">Escanea para instalar la aplicación</p>
+                <button class="main-btn" onclick="abrirPDF()">📄 📄 INSTRUCCIONES</button>
+                <p class="contact-info">Contacto: 829-325-4348</p>
+                <button class="outline-btn" onclick="cerrarAyuda()">CERRAR</button>
+            </div>
+        </div>
+
+        <div id="numpad-overlay" class="numpad-sheet">
+            <div class="drag-handle"></div>
+            <div class="numpad-grid">
+                <button onclick="presionarTecla('1')">1</button>
+                <button onclick="presionarTecla('2')">2</button>
+                <button onclick="presionarTecla('3')">3</button>
+                <button onclick="presionarTecla('4')">4</button>
+                <button onclick="presionarTecla('5')">5</button>
+                <button onclick="presionarTecla('6')">6</button>
+                <button onclick="presionarTecla('7')">7</button>
+                <button onclick="presionarTecla('8')">8</button>
+                <button onclick="presionarTecla('9')">9</button>
+                <button class="special" onclick="borrarTecla()">⌫</button>
+                <button onclick="presionarTecla('0')">0</button>
+                <button class="action" onclick="cerrarTeclado()">OK</button>
+            </div>
+        </div>
+    </div>
+    <script src="app.js"></script>
+</body>
+</html>
