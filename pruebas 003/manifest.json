@@ -1,0 +1,23 @@
+{
+  "name": "Campanas Parroquiales",
+  "short_name": "Campanas",
+  "description": "Sistema de Control de Campanas",
+  "start_url": "index.html",
+  "display": "standalone",
+  "background_color": "#F5F1ED",
+  "theme_color": "#5D4E37",
+  "icons": [
+    {
+      "src": "icono.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "icono.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
