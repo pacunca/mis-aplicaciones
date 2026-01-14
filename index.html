@@ -20,7 +20,7 @@
             </div>
             <div class="login-card">
                 <p>Ingrese el PIN</p>
-                <input type="text" id="pin-display-input" readonly onclick="abrirTeclado()" placeholder="">
+                <input type="text" id="pin-display-input" inputmode="none" readonly onclick="abrirTeclado()" placeholder="----">
                 <button class="main-btn" onclick="verificarAcceso()">INGRESAR</button>
             </div>
         </section>
@@ -31,7 +31,7 @@
             </div>
             
             <div class="status-bar">
-                <span>Audio Bluetooth Listo</span>
+                <span>Previamente Active Bluetooth</span>
             </div>
 
             <div class="control-grid">
@@ -39,29 +39,27 @@
                 <button class="bell-btn" onclick="playAudio('campana2.mp3')">🔔 Segundo Toque</button>
                 <button class="bell-btn" onclick="playAudio('campana3.mp3')">🔔 Tercer Toque</button>
                 <button class="bell-btn emergency-btn" onclick="confirmarEmergencia()">⚠️ 🚨 EMERGENCIA</button>
-                <button class="bell-btn stop-style" onclick="detenerSonido()">⏹️ DETENER SONIDO</button>
+                <button class="stop-btn" onclick="detenerSonido()">⏹️ DETENER SONIDO</button>
             </div>
 
             <div class="bottom-nav">
-                <div class="nav-item" onclick="abrirAyuda()"><strong>JL</strong><br>Ayuda</div>
+                <div class="nav-item" onclick="abrirAyuda()">
+                    <div class="circulo-jl-nav">JL</div>
+                    <span>Ayuda</span>
+                </div>
                 <div class="nav-item admin-pill" onclick="intentarConfiguracion()">⚙️ Admin</div>
             </div>
         </section>
 
         <section id="config-screen" class="screen hidden">
             <div class="config-header">
-                <button onclick="irAHome()">←</button>
+                <button onclick="irAHome()">← Volver</button>
                 <h2>Configuración</h2>
             </div>
             <div class="config-card">
-                <h3>🔐 Cambiar PIN de la App</h3>
-                <label>PIN Actual</label>
-                <input type="password" id="pin-actual" placeholder="Ingrese PIN actual">
-                <label>PIN Nuevo</label>
-                <input type="password" id="pin-nuevo" placeholder="Ingrese PIN nuevo">
-                <label>Confirmar PIN</label>
-                <input type="password" id="pin-confirma" placeholder="Confirme PIN nuevo">
-                <button class="main-btn" onclick="cambiarPinApp()">CAMBIAR PIN DE LA APP</button>
+                <h3>🔐 Gestión de Seguridad</h3>
+                <p>El cambio de PIN global requiere conexión a base de datos.</p>
+                <button class="main-btn" onclick="irAHome()">ACEPTAR</button>
             </div>
         </section>
 
@@ -73,7 +71,7 @@
                     <img src="qr_descarga.png" alt="QR de descarga" class="qr-img">
                 </div>
                 <p class="modal-text">Escanea para instalar la aplicación</p>
-                <button class="main-btn" onclick="abrirPDF()">📄 📄 INSTRUCCIONES</button>
+                <button class="main-btn" onclick="abrirPDF()">📄 INSTRUCCIONES PDF</button>
                 <p class="contact-info">Contacto: 829-325-4348</p>
                 <button class="outline-btn" onclick="cerrarAyuda()">CERRAR</button>
             </div>
