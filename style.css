@@ -11,6 +11,10 @@
     --gray-border: #D7D0C8;
     --shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
     --radius: 18px;
+    --success: #10B981;
+    --danger: #EF4444;
+    --info-blue: #4A90E2;
+    --warning-yellow: #FFF3CD;
 }
 
 /* ==========================================
@@ -51,7 +55,7 @@ body {
     display: flex;
     flex-direction: column;
     overflow-y: auto;
-    padding-bottom: 100px; /* Espacio para navegación inferior */
+    padding-bottom: 120px; /* Espacio para navegación inferior */
 }
 
 /* Ocultar scrollbar pero permitir scroll */
@@ -77,7 +81,7 @@ body {
 .circle-logo {
     width: 140px;
     height: 140px;
-    background: var(--white);
+    background: var(--primary);  /* Fondo marrón */
     border-radius: 50%;
     margin: 0 auto 20px auto;
     border: 3px solid var(--primary);
@@ -86,13 +90,17 @@ body {
     justify-content: center;
     align-items: center;
     box-shadow: var(--shadow);
+    position: relative;
 }
 
 #app-icon {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    padding: 10px;
+    width: 120%;  /* Más grande que el contenedor */
+    height: 120%; /* Más grande que el contenedor */
+    object-fit: cover;  /* Cubre todo, puede recortar */
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%); /* Centrado perfecto */
 }
 
 .logo-area h1 {
@@ -120,7 +128,8 @@ body {
     flex-shrink: 0;
 }
 
-#pin-display-input {
+/* CORRECCIÓN: Cambiado #pin-display-input por #pin-input para coincidir con HTML */
+#pin-input {
     width: 100%;
     height: 65px;
     font-size: 32px;
@@ -130,16 +139,30 @@ body {
     border: 2px solid var(--primary-light);
     background: var(--white);
     color: var(--primary);
-    letter-spacing: 8px;
-    cursor: pointer;
-    user-select: none;
+    letter-spacing: 12px;
+    box-sizing: border-box;
+    font-weight: bold;
+    caret-color: var(--primary);
     outline: none;
-    caret-color: transparent;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
 }
 
-#pin-display-input::placeholder {
+#pin-input::placeholder {
     letter-spacing: normal;
     color: #aaa;
+    font-weight: normal;
+}
+
+#pin-input:focus {
+    border-color: var(--success);
+    box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.2);
+}
+
+#pin-input.error {
+    border-color: var(--danger);
+    box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.2);
 }
 
 /* ==========================================
@@ -160,28 +183,104 @@ body {
 
 .status-bar {
     padding: 14px 16px;
-    background: #FFF3CD;
+    background: var(--warning-yellow);
     color: #856404;
     border-radius: 12px;
     text-align: center;
-    margin-bottom: 25px;
+    margin-bottom: 15px;
     font-weight: 600;
     font-size: 15px;
     border: 1px solid rgba(0, 0, 0, 0.05);
     flex-shrink: 0;
-    transition: all 0.3s ease;
 }
 
-.status-bar.connected {
-    background: #D4EDDA;
-    color: #155724;
-    border-color: #c3e6cb;
+/* ==========================================
+   INSTRUCCIONES BLUETOOTH (NUEVO)
+   ========================================== */
+.bluetooth-instructions {
+    background: #E8F4FD;
+    border: 2px solid var(--info-blue);
+    border-radius: 12px;
+    padding: 15px;
+    margin: 15px 0;
+    font-size: 14px;
+    color: #2C3E50;
+    text-align: left;
+    flex-shrink: 0;
 }
 
-.status-bar.error {
-    background: #F8D7DA;
-    color: #721C24;
-    border-color: #f5c6cb;
+.bluetooth-instructions h4 {
+    color: var(--info-blue);
+    margin-top: 0;
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 15px;
+}
+
+.bluetooth-step {
+    margin: 8px 0;
+    padding-left: 18px;
+    position: relative;
+    line-height: 1.4;
+}
+
+.bluetooth-step:before {
+    content: "•";
+    position: absolute;
+    left: 5px;
+    color: var(--info-blue);
+    font-weight: bold;
+    font-size: 16px;
+}
+
+.bluetooth-warning {
+    background: var(--warning-yellow);
+    border: 1px solid #FFEAA7;
+    border-radius: 8px;
+    padding: 10px;
+    margin-top: 12px;
+    font-size: 13px;
+    color: #856404;
+    font-weight: 600;
+    text-align: center;
+}
+
+/* ==========================================
+   NUEVOS ESTILOS PARA INSTALACIÓN PWA
+   ========================================== */
+.install-advice {
+    background: #F0F9FF;
+    border: 2px dashed #3B82F6;
+    border-radius: 12px;
+    padding: 15px;
+    margin: 20px 0;
+    text-align: center;
+    font-size: 14px;
+    color: #1E40AF;
+    flex-shrink: 0;
+}
+
+.install-advice p {
+    margin: 0 0 10px 0;
+    font-weight: 600;
+}
+
+.install-hints {
+    background: #FEF3C7;
+    border-radius: 8px;
+    padding: 10px;
+    margin-top: 10px;
+    font-size: 12px;
+    color: #92400E;
+    text-align: left;
+}
+
+.install-hints span {
+    display: block;
+    margin: 3px 0;
+    line-height: 1.4;
 }
 
 /* ==========================================
@@ -191,7 +290,7 @@ body {
     display: grid;
     grid-template-columns: 1fr;
     gap: 15px;
-    margin-bottom: 25px;
+    margin-bottom: 20px;
     flex: 1;
 }
 
@@ -211,7 +310,8 @@ body {
    ========================================== */
 .main-btn,
 .bell-btn,
-.stop-btn {
+.stop-btn,
+.install-btn {
     width: 100%;
     padding: 22px 10px;
     border-radius: var(--radius);
@@ -230,7 +330,8 @@ body {
 
 .main-btn:active,
 .bell-btn:active,
-.stop-btn:active {
+.stop-btn:active,
+.install-btn:active {
     transform: scale(0.97);
     box-shadow: 0 2px 5px rgba(0, 0, 0, 0.15);
 }
@@ -247,7 +348,7 @@ body {
 }
 
 .emergency-btn {
-    background: linear-gradient(180deg, var(--emergency) 0%, #723A15 100%) !important;
+    background: linear-gradient(180deg, var(--emergency) 0%, #B91C1C 100%) !important;
     color: var(--white) !important;
     font-weight: 800;
 }
@@ -259,7 +360,7 @@ body {
 }
 
 /* ==========================================
-   INSTALACIÓN PWA
+   INSTALACIÓN PWA (MEJORADO)
    ========================================== */
 .install-box {
     margin: 20px 0;
@@ -267,29 +368,14 @@ body {
 }
 
 .install-btn {
-    width: 100%;
-    padding: 18px;
-    background: linear-gradient(180deg, #34C759 0%, #2AA952 100%);
+    background: linear-gradient(180deg, #3b6e7a 0%, #2AA952 100%);
     color: white;
-    border: none;
-    border-radius: var(--radius);
     font-size: 17px;
-    font-weight: 700;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 10px;
-    box-shadow: var(--shadow);
-    transition: all 0.2s ease;
-}
-
-.install-btn:active {
-    transform: scale(0.97);
+    padding: 18px;
 }
 
 /* ==========================================
-   NAVEGACIÓN INFERIOR (FIXED)
+   NAVEGACIÓN INFERIOR (FIXED) - 3 BOTONES
    ========================================== */
 .bottom-nav {
     position: fixed;
@@ -300,9 +386,9 @@ body {
     max-width: 440px;
     background: var(--white);
     display: flex;
-    justify-content: space-around;
+    justify-content: space-between;
     align-items: center;
-    padding: 12px 20px;
+    padding: 12px 15px;
     border-radius: 25px;
     border: 1.5px solid var(--gray-border);
     box-shadow: 0 -5px 20px rgba(0, 0, 0, 0.1);
@@ -316,11 +402,18 @@ body {
     flex-direction: column;
     align-items: center;
     color: var(--primary);
-    font-size: 14px;
+    font-size: 13px;
     font-weight: 600;
-    min-width: 70px;
+    min-width: 65px;
+    flex: 1;
+    transition: all 0.2s ease;
 }
 
+.nav-item:active {
+    transform: scale(0.95);
+}
+
+/* Botón Ayuda (JL) */
 .circulo-jl-nav {
     width: 50px;
     height: 50px;
@@ -336,17 +429,39 @@ body {
     margin-bottom: 4px;
 }
 
+/* Botón Bluetooth (AHORA SOLO INSTRUCCIONES) */
+.circulo-bt-nav {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    background: linear-gradient(180deg, var(--primary-light) 0%, var(--primary) 100%);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    color: var(--white);
+    font-size: 1.5em;
+    margin-bottom: 4px;
+    transition: all 0.3s ease;
+    box-shadow: 0 3px 8px rgba(0, 0, 0, 0.15);
+}
+
+/* Botón Admin */
 .admin-pill {
     background: #444;
     color: var(--white) !important;
     border-radius: 12px;
-    padding: 10px 20px !important;
-    font-weight: 800;
-    font-size: 15px;
+    padding: 10px 15px !important;
+    font-weight: 700;
+    font-size: 14px;
+    min-height: 50px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0;
 }
 
 /* ==========================================
-   PANTALLA DE CONFIGURACIÓN BLUETOOTH
+   PANTALLA DE CONFIGURACIÓN (SIMPLIFICADA)
    ========================================== */
 .config-header {
     display: flex;
@@ -364,6 +479,12 @@ body {
     border-radius: 10px;
     font-weight: 600;
     cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.config-header button:active {
+    background: var(--primary-light);
+    color: white;
 }
 
 .config-header h2 {
@@ -372,40 +493,10 @@ body {
     font-size: 1.5em;
 }
 
-.bluetooth-config {
-    text-align: center;
-    padding: 10px 0;
-}
-
-.bluetooth-icon {
-    margin: 15px auto;
-    color: var(--primary);
-}
-
 .config-description {
     color: #666;
     margin: 15px 0 25px 0;
     line-height: 1.5;
-}
-
-.mac-input {
-    width: 100%;
-    padding: 18px;
-    font-size: 18px;
-    text-align: center;
-    border: 2px solid var(--primary-light);
-    border-radius: 12px;
-    margin: 15px 0;
-    letter-spacing: 1px;
-    font-family: monospace;
-    text-transform: uppercase;
-}
-
-.config-buttons {
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-    margin: 20px 0;
 }
 
 .outline-btn {
@@ -417,20 +508,13 @@ body {
     font-weight: 700;
     cursor: pointer;
     transition: all 0.2s ease;
+    width: 100%;
+    margin-top: 10px;
 }
 
 .outline-btn:active {
     background: var(--primary-light);
     color: white;
-}
-
-.mac-saved {
-    background: #D4EDDA;
-    color: #155724;
-    padding: 12px;
-    border-radius: 10px;
-    margin-top: 15px;
-    font-weight: 600;
 }
 
 /* ==========================================
@@ -516,71 +600,76 @@ body {
 }
 
 /* ==========================================
-   TECLADO NUMÉRICO (SHEET BOTTOM)
+   TECLADO NUMÉRICO (ELIMINADO COMPLETAMENTE)
    ========================================== */
-.numpad-sheet {
-    position: fixed;
-    bottom: 0;
-    left: 50%;
-    transform: translateX(-50%) translateY(100%);
-    width: 100%;
-    max-width: 480px;
-    background: var(--white);
-    border-radius: 30px 30px 0 0;
-    transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-    padding: 20px 20px 40px 20px;
-    z-index: 1500;
-    box-shadow: 0 -10px 30px rgba(0, 0, 0, 0.15);
-}
-
-.numpad-sheet.active {
-    transform: translateX(-50%) translateY(0);
-}
-
-.numpad-grid {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 15px;
-    padding: 20px 10px;
-}
-
-.numpad-grid button {
-    padding: 25px 10px;
-    font-size: 26px;
-    font-weight: 700;
-    border-radius: 15px;
-    border: 2px solid #eee;
-    background: #f8f9fa;
-    color: var(--primary);
-    cursor: pointer;
-    transition: all 0.1s ease;
-}
-
-.numpad-grid button:active {
-    background: var(--primary-light);
-    color: white;
-    border-color: var(--primary-light);
-}
-
-.numpad-grid button.special {
-    font-size: 24px;
-    background: #ff6b6b;
-    color: white;
-    border-color: #ff6b6b;
-}
-
-.numpad-grid button.action {
-    background: var(--primary);
-    color: white;
-    border-color: var(--primary);
-    font-size: 20px;
-}
+/* NOTA: Todo el código de teclado personalizado ha sido eliminado
+   porque la aplicación usa inputmode="numeric" para teclado nativo.
+   Esto garantiza compatibilidad a 20+ años y mejor experiencia móvil. */
 
 /* ==========================================
    UTILIDADES
    ========================================== */
 .hidden {
     display: none !important;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+/* ==========================================
+   CORRECCIONES ESPECÍFICAS PARA PWA INSTALADA
+   ========================================== */
+
+/* Ajuste para barra de estado en iOS */
+@supports (padding-top: env(safe-area-inset-top)) {
+    .screen {
+        padding-top: calc(20px + env(safe-area-inset-top));
+        padding-bottom: calc(120px + env(safe-area-inset-bottom));
+    }
+    
+    .bottom-nav {
+        bottom: calc(20px + env(safe-area-inset-bottom));
+        padding-bottom: calc(12px + env(safe-area-inset-bottom));
+    }
+}
+
+/* Fijar altura en modo standalone */
+@media (display-mode: standalone) {
+    body {
+        overflow: hidden;
+        height: 100vh;
+    }
+    
+    #app-container {
+        height: 100vh;
+        max-height: 100vh;
+    }
+    
+    .screen {
+        min-height: calc(100vh - 40px);
+        max-height: calc(100vh - 40px);
+        padding-bottom: calc(120px + env(safe-area-inset-bottom));
+    }
+    
+    /* Asegurar que los botones sean táctiles en standalone */
+    button {
+        min-height: 44px;
+        min-width: 44px;
+    }
+    
+    /* Ocultar consejos de instalación si ya está instalado */
+    .install-advice,
+    .install-box {
+        display: none !important;
+    }
+}
+
+/* Prevenir zoom en inputs iOS */
+input, textarea, select {
+    font-size: 16px !important;
+    touch-action: manipulation;
 }
 
 /* ==========================================
@@ -604,7 +693,8 @@ body {
     
     .main-btn,
     .bell-btn,
-    .stop-btn {
+    .stop-btn,
+    .install-btn {
         padding: 18px 10px;
         min-height: 60px;
         font-size: 16px;
@@ -612,18 +702,36 @@ body {
     
     .bottom-nav {
         bottom: 10px;
-        padding: 10px 15px;
+        padding: 10px 12px;
     }
     
-    .circulo-jl-nav {
+    .circulo-jl-nav,
+    .circulo-bt-nav {
         width: 40px;
         height: 40px;
-        font-size: 1.5em;
+        font-size: 1.4em;
     }
     
     .nav-item {
         font-size: 12px;
-        min-width: 60px;
+        min-width: 55px;
+    }
+    
+    .admin-pill {
+        padding: 8px 12px !important;
+        font-size: 12px;
+        min-height: 40px;
+    }
+    
+    .bluetooth-instructions,
+    .install-advice {
+        padding: 12px;
+        font-size: 13px;
+    }
+    
+    .bluetooth-step,
+    .install-hints {
+        font-size: 12px;
     }
 }
 
@@ -637,13 +745,34 @@ body {
     }
     
     .bell-btn,
-    .stop-btn {
+    .stop-btn,
+    .install-btn {
         font-size: 15px;
     }
     
     .qr-img {
         width: 180px;
         height: 180px;
+    }
+    
+    .bottom-nav {
+        padding: 10px 8px;
+    }
+    
+    .nav-item {
+        min-width: 50px;
+        font-size: 11px;
+    }
+    
+    .bluetooth-instructions,
+    .install-advice {
+        padding: 10px;
+    }
+    
+    #pin-input {
+        font-size: 28px;
+        height: 60px;
+        letter-spacing: 10px;
     }
 }
 
@@ -657,5 +786,47 @@ body {
     
     #app-container {
         min-height: -webkit-fill-available;
+    }
+    
+    /* Mejorar apariencia en iOS */
+    input, button {
+        -webkit-appearance: none;
+    }
+    
+    /* Input específico para iOS */
+    #pin-input {
+        letter-spacing: 10px;
+    }
+}
+
+/* ==========================================
+   ACCESIBILIDAD PARA PERSONAS MAYORES
+   ========================================== */
+#pin-input {
+    font-size: 32px !important;
+    font-weight: bold !important;
+    color: var(--primary) !important;
+    background-color: var(--white) !important;
+}
+
+/* Alto contraste para mejor visibilidad */
+@media (prefers-contrast: high) {
+    #pin-input {
+        border-width: 3px;
+        border-color: #000000;
+    }
+    
+    .main-btn,
+    .bell-btn {
+        border: 2px solid #000000;
+    }
+}
+
+/* Tamaño de texto más grande si el sistema lo pide */
+@media (prefers-reduced-motion: reduce) {
+    * {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
     }
 }
