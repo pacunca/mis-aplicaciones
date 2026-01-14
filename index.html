@@ -21,6 +21,135 @@
     <link rel="stylesheet" href="style.css">
     <link rel="manifest" href="manifest.json">
     <link rel="icon" href="icono.png">
+    
+    <!-- Estilos simplificados -->
+    <style>
+        /* Instrucciones Bluetooth */
+        .bluetooth-instructions {
+            background: #E8F4FD;
+            border: 2px solid #4A90E2;
+            border-radius: 12px;
+            padding: 15px;
+            margin: 20px 0;
+            font-size: 14px;
+            color: #2C3E50;
+            text-align: left;
+        }
+        
+        .bluetooth-instructions h4 {
+            color: #4A90E2;
+            margin-top: 0;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+        }
+        
+        .bluetooth-step {
+            margin: 8px 0;
+            padding-left: 20px;
+            position: relative;
+        }
+        
+        .bluetooth-step:before {
+            content: "•";
+            position: absolute;
+            left: 5px;
+            color: #4A90E2;
+            font-weight: bold;
+        }
+        
+        .bluetooth-warning {
+            background: #FFF3CD;
+            border: 1px solid #FFEAA7;
+            border-radius: 8px;
+            padding: 10px;
+            margin-top: 10px;
+            font-size: 13px;
+            color: #856404;
+            font-weight: 600;
+        }
+        
+        /* Input PIN VISIBLE para personas mayores */
+        #pin-input {
+            width: 100%;
+            height: 65px;
+            font-size: 32px;
+            text-align: center;
+            margin: 20px 0;
+            border-radius: 15px;
+            border: 2px solid #8B7355;
+            background: #FFFFFF;
+            color: #5D4E37;
+            letter-spacing: 12px;
+            box-sizing: border-box;
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            appearance: none;
+            font-weight: bold;
+        }
+        
+        /* Cambiado de type="password" a type="text" para mostrar números */
+        #pin-input::placeholder {
+            letter-spacing: normal;
+            color: #aaa;
+            font-weight: normal;
+        }
+        
+        #pin-input:focus {
+            border-color: #10B981;
+            box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.2);
+            outline: none;
+        }
+        
+        #pin-input.error {
+            border-color: #EF4444;
+            box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.2);
+        }
+        
+        /* Ocultar flechas en navegadores */
+        #pin-input::-webkit-outer-spin-button,
+        #pin-input::-webkit-inner-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+        
+        #pin-input[type=number] {
+            -moz-appearance: textfield;
+        }
+        
+        /* Botón de instalación MEJORADO */
+        .install-advice {
+            background: #F0F9FF;
+            border: 2px dashed #3B82F6;
+            border-radius: 12px;
+            padding: 15px;
+            margin: 20px 0;
+            text-align: center;
+            font-size: 14px;
+            color: #1E40AF;
+        }
+        
+        .install-advice p {
+            margin: 0 0 10px 0;
+            font-weight: 600;
+        }
+        
+        /* Instrucciones específicas por navegador */
+        .install-hints {
+            background: #FEF3C7;
+            border-radius: 8px;
+            padding: 10px;
+            margin-top: 10px;
+            font-size: 12px;
+            color: #92400E;
+            text-align: left;
+        }
+        
+        .install-hints span {
+            display: block;
+            margin: 3px 0;
+        }
+    </style>
 </head>
 <body>
     <div id="app-container">
@@ -28,30 +157,69 @@
         <section id="login-screen" class="screen">
             <div class="logo-area">
                 <div class="circle-logo">
-                    <img src="icono.png" alt="Icono" id="app-icon">
+                    <img src="icon-192.png" alt="Icono" id="app-icon">
                 </div>
                 <h1>Campanas Parroquiales</h1>
-                <p class="subtitle">Sistema de Control</p>
+                <p class="subtitle">Sistema de Control Universal</p>
             </div>
+            
             <div class="login-card">
                 <p>Ingrese el PIN</p>
-                <input type="text" id="pin-display-input" inputmode="none" readonly onclick="abrirTeclado()" placeholder="----">
+                
+                <!-- INPUT CON TECLADO NATIVO VISIBLE para personas mayores -->
+                <input type="text"
+                       id="pin-input"
+                       inputmode="numeric"
+                       pattern="[0-9]*"
+                       maxlength="4"
+                       autocomplete="off"
+                       autofocus
+                       placeholder="____"
+                       oninput="validarPinInput(this)">
+                
                 <button class="main-btn" onclick="verificarAcceso()">INGRESAR</button>
+            </div>
+            
+            <!-- CONSEJO DE INSTALACIÓN EN LOGIN -->
+            <div class="install-advice" id="install-advice">
+                <p>📱 ¿Usa esta app frecuentemente?</p>
+                <button class="install-btn" id="install-login-button" style="margin: 0 auto 10px auto;">
+                    AGREGAR A PANTALLA INICIAL
+                </button>
+                <div class="install-hints" id="install-hints">
+                    <span><strong>Android Chrome:</strong> Menú → "Agregar a pantalla de inicio"</span>
+                    <span><strong>iPhone Safari:</strong> Compartir → "Agregar a inicio"</span>
+                </div>
+            </div>
+            
+            <!-- INSTRUCCIONES BLUETOOTH EN LOGIN -->
+            <div class="bluetooth-instructions">
+                <h4>📡 CONFIGURACIÓN INICIAL (UNA SOLA VEZ)</h4>
+                <div class="bluetooth-step">1. Encienda el módulo Bluetooth (1Mii o similar)</div>
+                <div class="bluetooth-step">2. En su celular: Configuración → Bluetooth</div>
+                <div class="bluetooth-step">3. Busque dispositivo bluetooth en la lista</div>
+                <div class="bluetooth-step">4. Conéctese (parear)</div>
+                <div class="bluetooth-step">5. Una vez conectado, ingrese el PIN arriba</div>
+                <div class="bluetooth-warning">
+                    ⚠️ Después de parear una vez, se conectará automáticamente
+                </div>
             </div>
         </section>
 
         <!-- PANTALLA PRINCIPAL -->
-        <section id="home-screen" class="screen hidden">
-            <div class="header-control">
-                <h2>🔔 CAMPANAS PARROQUIALES</h2>
-            </div>
-            
-            <!-- INDICADOR DE BLUETOOTH -->
-            <div class="status-bar" id="bluetooth-status">
-                <span id="bluetooth-status-text">Verificando Bluetooth...</span>
-            </div>
+      <section id="home-screen" class="screen hidden">
+    <!-- ICONO EN PANTALLA PRINCIPAL -->
+    <div class="logo-area" style="margin-top: 10px; margin-bottom: 10px;">
+        <div class="circle-logo" style="width: 80px; height: 80px; margin-bottom: 10px;">
+            <img src="icon-96.png" alt="Icono" class="home-icon">
+        </div>
+    </div>
+    
+    <div class="header-control">
+        <h2>🔔 CAMPANAS PARROQUIALES</h2>
+    </div>
 
-            <!-- BOTONES DE CONTROL -->
+             <!-- BOTONES DE CONTROL -->
             <div class="control-grid">
                 <button class="bell-btn" onclick="playAudio('campana1.mp3')">🔔 Primer Toque</button>
                 <button class="bell-btn" onclick="playAudio('campana2.mp3')">🔔 Segundo Toque</button>
@@ -60,11 +228,18 @@
                 <button class="stop-btn" onclick="detenerSonido()">⏹️ DETENER SONIDO</button>
             </div>
 
-            <!-- BOTÓN DE INSTALACIÓN PWA -->
-            <div id="install-container" class="install-box hidden">
-                <button class="install-btn" id="install-button">
-                    📱 INSTALAR EN ESCRITORIO
-                </button>
+            <!-- BOTÓN DE INSTALACIÓN PWA MEJORADO -->
+            <div id="install-container" class="install-box">
+                <div class="install-advice">
+                    <p>💡 Para acceso rápido:</p>
+                    <button class="install-btn" id="install-button">
+                        📱 AGREGAR A PANTALLA INICIAL
+                    </button>
+                    <div class="install-hints">
+                        <span><strong>Android:</strong> Menú Chrome → "Agregar a pantalla de inicio"</span>
+                        <span><strong>iPhone:</strong> Compartir Safari → "Agregar a inicio"</span>
+                    </div>
+                </div>
             </div>
 
             <!-- NAVEGACIÓN INFERIOR -->
@@ -73,41 +248,39 @@
                     <div class="circulo-jl-nav">JL</div>
                     <span>Ayuda</span>
                 </div>
+                
+                <!-- BOTÓN CONEXIÓN (AHORA INSTRUCCIONES) -->
+                <div class="nav-item" onclick="mostrarInstruccionesBluetooth()" id="bluetooth-help-btn">
+                    <div class="circulo-bt-nav">📡</div>
+                    <span id="bluetooth-help-text">Conectar</span>
+                </div>
+                
                 <div class="nav-item admin-pill" onclick="intentarConfiguracion()">⚙️ Admin</div>
             </div>
         </section>
 
-        <!-- PANTALLA DE CONFIGURACIÓN -->
+        <!-- PANTALLA DE CONFIGURACIÓN SIMPLIFICADA -->
         <section id="config-screen" class="screen hidden">
             <div class="config-header">
                 <button onclick="irAHome()">← Volver</button>
                 <h2>Configuración</h2>
             </div>
             
-            <!-- SECCIÓN DE BLUETOOTH -->
-            <div class="config-card">
-                <h3>📡 Configuración Bluetooth</h3>
-                <div class="bluetooth-config">
-                    <div class="bluetooth-icon">
-                        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M6.5 6.5l11 11M17.5 6.5l-11 11M12 2v20"/>
-                        </svg>
-                    </div>
-                    <p class="config-description">Ingrese la dirección MAC del dispositivo Bluetooth</p>
-                    <input type="text" id="mac-input" class="mac-input" placeholder="XX:XX:XX:XX:XX:XX" maxlength="17">
-                    <div class="config-buttons">
-                        <button class="main-btn" onclick="guardarMAC()">💾 GUARDAR MAC</button>
-                        <button class="outline-btn" onclick="probarConexionBT()">🔗 PROBAR CONEXIÓN</button>
-                    </div>
-                    <p class="mac-saved hidden" id="mac-saved-text">✅ MAC guardada correctamente</p>
-                </div>
-            </div>
-
-            <!-- SECCIÓN DE SEGURIDAD -->
+            <!-- SOLO SEGURIDAD, SIN BLUETOOTH COMPLEJO -->
             <div class="config-card">
                 <h3>🔐 Gestión de Seguridad</h3>
-                <p>El cambio de PIN global requiere conexión a base de datos.</p>
-                <button class="main-btn" onclick="irAHome()">ACEPTAR</button>
+                <p>Cambio de PIN global (anti-robo). Requiere conexión a internet.</p>
+                <button class="main-btn" onclick="cambiarPinApp()">🔄 CAMBIAR PIN GLOBAL</button>
+                <p class="config-note" style="font-size: 12px; color: #666; margin-top: 10px;">
+                    El PIN se sincroniza cuando el dispositivo tiene internet
+                </p>
+            </div>
+            
+            <!-- BOTÓN PARA VOLVER -->
+            <div style="text-align: center; margin-top: 20px; padding: 0 20px;">
+                <button class="outline-btn" onclick="irAHome()" style="width: 100%;">
+                    🏠 VOLVER A CAMPANAS
+                </button>
             </div>
         </section>
 
@@ -125,34 +298,17 @@
                 <button class="outline-btn" onclick="cerrarAyuda()">CERRAR</button>
             </div>
         </div>
-
-        <!-- TECLADO NUMÉRICO -->
-        <div id="numpad-overlay" class="numpad-sheet">
-            <div class="drag-handle"></div>
-            <div class="numpad-grid">
-                <button onclick="presionarTecla('1')">1</button>
-                <button onclick="presionarTecla('2')">2</button>
-                <button onclick="presionarTecla('3')">3</button>
-                <button onclick="presionarTecla('4')">4</button>
-                <button onclick="presionarTecla('5')">5</button>
-                <button onclick="presionarTecla('6')">6</button>
-                <button onclick="presionarTecla('7')">7</button>
-                <button onclick="presionarTecla('8')">8</button>
-                <button onclick="presionarTecla('9')">9</button>
-                <button class="special" onclick="borrarTecla()">⌫</button>
-                <button onclick="presionarTecla('0')">0</button>
-                <button class="action" onclick="cerrarTeclado()">OK</button>
-            </div>
-        </div>
     </div>
     
-    <!-- REGISTRO DE SERVICE WORKER -->
+    <!-- REGISTRO DE SERVICE WORKER (SIMPLIFICADO) -->
     <script>
         if ('serviceWorker' in navigator) {
-            window.addEventListener('load', () => {
+            window.addEventListener('load', function() {
+                // Solo registrar, no manejar eventos complejos
                 navigator.serviceWorker.register('sw.js')
-                    .then(reg => console.log('Service Worker registrado'))
-                    .catch(err => console.log('Service Worker error:', err));
+                    .catch(function(err) {
+                        console.log('Service Worker no registrado:', err);
+                    });
             });
         }
     </script>
