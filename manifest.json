@@ -6,23 +6,26 @@
   "scope": "./",
   "display": "standalone",
   "orientation": "portrait",
-  "background_color": "#F5F1ED",
+  "background_color": "#FAF7F0",
   "theme_color": "#5D4E37",
   "icons": [
     {
       "src": "icon-192.png",
       "sizes": "192x192",
-      "type": "image/png",
-      "purpose": "any maskable"
+      "type": "image/png"
     },
     {
       "src": "icon-512.png",
       "sizes": "512x512",
-      "type": "image/png",
-      "purpose": "any maskable"
+      "type": "image/png"
+    },
+    {
+      "src": "icono.png",
+      "sizes": "144x144",
+      "type": "image/png"
     }
   ],
   "categories": ["utilities", "productivity"],
-  "lang": "es-DO",
+  "lang": "es",
   "dir": "ltr"
 }
