@@ -6,6 +6,7 @@ const CLAVE_MAESTRA = "santamaria"; // Clave solo para ADMIN
 const URL_PIN_REMOTO = "https://raw.githubusercontent.com/pacunca/mis-aplicaciones/main/pin-actual.txt";
 
 let audioActual = null;             // Controla el sonido que suena
+let deferredPrompt = null;          // Para instalación PWA
 let esDispositivoApple = false;     // Detectar iPhone/iPad/Mac
 let ultimaActualizacionPIN = null;  // Para sincronización remota
 let esModoOffline = false;          // Controlar estado de conexión
@@ -29,8 +30,8 @@ document.addEventListener('DOMContentLoaded', function() {
         setTimeout(sincronizarPIN, 500);
     }
     
-    // 4. Configurar instalación PWA (sistema universal)
-    configurarInstalacionPWAUniversal();
+    // 4. Configurar instalación PWA (DOS BOTONES)
+    configurarInstalacionPWA();
     
     // 5. Configurar eventos globales
     configurarEventosGlobales();
@@ -48,7 +49,13 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }, 300);
     
-    // 7. Verificar archivos de audio (solo en desarrollo)
+    // 7. Configurar botón de instalación en login
+    configurarBotonInstalacionLogin();
+    
+    // 8. Ocultar instrucciones de instalación si ya está instalado
+    verificarSiYaInstalado();
+    
+    // 9. Verificar archivos de audio (solo en desarrollo)
     if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
         setTimeout(verificarArchivosAudio, 1000);
     }
@@ -146,107 +153,123 @@ async function sincronizarPIN() {
 }
 
 // ==========================================
-// INSTALACIÓN PWA UNIVERSAL (20+ AÑOS)
+// INSTALACIÓN PWA MEJORADA (DOS BOTONES)
 // ==========================================
-function configurarInstalacionPWAUniversal() {
-    console.log('🔧 Configurando sistema de instalación universal');
+function configurarInstalacionPWA() {
+    // Configurar BOTÓN PRINCIPAL (en home-screen)
+    const installButton = document.getElementById('install-button');
+    if (installButton) {
+        installButton.addEventListener('click', manejarInstalacion);
+    }
     
-    // Detectar capacidades del navegador
-    const soportaPWA = window.matchMedia('(display-mode: standalone)').matches ||
-                      window.navigator.standalone !== undefined;
-    
-    // Configurar botones después de que cargue la página
-    setTimeout(() => {
-        const installButton = document.getElementById('install-button');
-        const installLoginButton = document.getElementById('install-login-button');
-        
-        if (installButton) {
-            installButton.onclick = mostrarInstruccionesInstalacionUniversal;
-            installButton.style.display = 'block';
-            console.log('✅ Botón instalación principal configurado');
-        }
-        
-        if (installLoginButton) {
-            installLoginButton.onclick = mostrarInstruccionesInstalacionUniversal;
-            installLoginButton.style.display = 'block';
-            console.log('✅ Botón instalación login configurado');
-        }
-        
-        // Ocultar si ya está instalada
-        verificarSiYaInstalada();
-        
-    }, 1500);
-    
-    // Mantener beforeinstallprompt solo para registro (no funcionalidad)
+    // Solo si el navegador soporta beforeinstallprompt
     if ('beforeinstallprompt' in window) {
         window.addEventListener('beforeinstallprompt', (e) => {
-            console.log('ℹ️ beforeinstallprompt detectado (información histórica)');
-            // No hacer nada funcional, solo registrar
+            e.preventDefault();
+            deferredPrompt = e;
+            
+            console.log('📱 Evento beforeinstallprompt capturado');
+            
+            // Mostrar ambos botones de instalación
+            mostrarBotonesInstalacion();
         });
     }
-}
-
-function mostrarInstruccionesInstalacionUniversal() {
-    const instrucciones = 
-`📱 COMO INSTALAR ESTA APLICACIÓN:
-
-ESTA APP SE PUEDE INSTALAR en su teléfono como una aplicación normal.
-
-PARA INSTALAR:
-
-1. Busque el BOTÓN DE MENÚ en su navegador:
-   • Chrome Android: 3 puntos verticales (arriba derecha)
-   • Safari iPhone: Cuadrado con flecha (📤 abajo centro)
-   • Samsung Internet: 3 líneas horizontales (≡ abajo derecha)
-
-2. En el menú, busque y toque:
-   ⭐ "AGREGAR A PANTALLA DE INICIO"
-   o "INSTALAR APLICACIÓN"
-
-3. Confirme la instalación cuando se lo pidan.
-
-✅ LISTO: La aplicación tendrá su propio ícono en la pantalla principal.
-
-💡 CONSEJO: Una vez instalada, se abre como app independiente, sin barra del navegador.
-`;
-
-    // Intentar mostrar en modal si existe, sino usar alert
-    if (typeof mostrarModalInstalacion === 'function') {
-        mostrarModalInstalacion(instrucciones);
-    } else {
-        alert(instrucciones);
-    }
-}
-
-function verificarSiYaInstalada() {
-    // Métodos robustos para detectar instalación
-    const yaInstalada = 
-        window.navigator.standalone === true ||
-        window.matchMedia('(display-mode: standalone)').matches ||
-        document.referrer.includes('android-app://') ||
-        (window.location.search.includes('source=pwa') && window.history.length === 1);
     
-    if (yaInstalada) {
-        console.log('🏠 PWA ya instalada - ocultando botones');
-        ocultarBotonesInstalacion();
-    }
-}
-
-function ocultarBotonesInstalacion() {
-    const elementos = [
-        'install-container',
-        'install-advice',
-        'install-button',
-        'install-login-button'
-    ];
-    
-    elementos.forEach(id => {
-        const elemento = document.getElementById(id);
-        if (elemento) {
-            elemento.style.display = 'none';
-            console.log(`✅ Ocultado: #${id}`);
-        }
+    // Ocultar botones si ya está instalado
+    window.addEventListener('appinstalled', () => {
+        console.log('🏠 PWA instalada exitosamente');
+        ocultarTodosBotonesInstalacion();
+        deferredPrompt = null;
     });
+}
+
+function configurarBotonInstalacionLogin() {
+    // Configurar BOTÓN EN LOGIN (nuevo)
+    const installLoginButton = document.getElementById('install-login-button');
+    if (installLoginButton) {
+        installLoginButton.addEventListener('click', manejarInstalacion);
+    }
+}
+
+function mostrarBotonesInstalacion() {
+    // Mostrar contenedor principal
+    const installContainer = document.getElementById('install-container');
+    if (installContainer) {
+        installContainer.style.display = 'block';
+    }
+    
+    // Mostrar consejo en login
+    const installAdvice = document.getElementById('install-advice');
+    if (installAdvice) {
+        installAdvice.style.display = 'block';
+    }
+}
+
+function ocultarTodosBotonesInstalacion() {
+    // Ocultar contenedor principal
+    const installContainer = document.getElementById('install-container');
+    if (installContainer) {
+        installContainer.style.display = 'none';
+    }
+    
+    // Ocultar consejo en login
+    const installAdvice = document.getElementById('install-advice');
+    if (installAdvice) {
+        installAdvice.style.display = 'none';
+    }
+}
+
+async function manejarInstalacion() {
+    if (!deferredPrompt) {
+        // Si no hay beforeinstallprompt, dar instrucciones manuales
+        mostrarInstruccionesManuales();
+        return;
+    }
+    
+    try {
+        // Mostrar el prompt de instalación
+        deferredPrompt.prompt();
+        
+        // Esperar la respuesta del usuario
+        const { outcome } = await deferredPrompt.userChoice;
+        
+        if (outcome === 'accepted') {
+            console.log('✅ Usuario aceptó instalar la PWA');
+            ocultarTodosBotonesInstalacion();
+        } else {
+            console.log('❌ Usuario rechazó instalar la PWA');
+        }
+        
+    } catch (error) {
+        console.warn('⚠️ Error en instalación PWA:', error);
+        mostrarInstruccionesManuales();
+    }
+    
+    deferredPrompt = null;
+}
+
+function mostrarInstruccionesManuales() {
+    const mensaje = esDispositivoApple 
+        ? "📱 Para instalar en iPhone:\n\n1. Toque el botón 'Compartir' (cuadrado con flecha arriba)\n2. Desplácese hacia abajo\n3. Toque 'Agregar a Inicio'\n4. Toque 'Agregar' en la esquina superior derecha"
+        : "📱 Para instalar en Android:\n\n1. Toque el menú (tres puntos)\n2. Toque 'Agregar a pantalla de inicio'\n3. Toque 'Agregar' en el diálogo\n\nEn algunos teléfonos: Menú → 'Instalar app'";
+    
+    alert(mensaje);
+}
+
+function verificarSiYaInstalado() {
+    // Verificar si ya está en modo standalone (instalado)
+    if (window.matchMedia('(display-mode: standalone)').matches) {
+        console.log('📱 PWA ya está instalada (standalone mode)');
+        ocultarTodosBotonesInstalacion();
+        return;
+    }
+    
+    // Verificar navigator.standalone (iOS)
+    if (navigator.standalone === true) {
+        console.log('📱 PWA ya está instalada en iOS');
+        ocultarTodosBotonesInstalacion();
+        return;
+    }
 }
 
 // ==========================================
