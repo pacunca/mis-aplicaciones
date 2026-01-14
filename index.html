@@ -300,19 +300,20 @@
         </div>
     </div>
     
-    <!-- REGISTRO DE SERVICE WORKER (SIMPLIFICADO) -->
-    <script>
-        if ('serviceWorker' in navigator) {
-            window.addEventListener('load', function() {
-                // Solo registrar, no manejar eventos complejos
-                navigator.serviceWorker.register('sw.js')
-                    .catch(function(err) {
-                        console.log('Service Worker no registrado:', err);
-                    });
-            });
-        }
-    </script>
+<!-- SERVICIO SIMPLIFICADO - SIN ERRORES -->
+<script>
+    // Solo esto: verificar que el navegador soporte PWA básica
+    console.log('Aplicación Campanas Parroquiales cargada');
     
-    <script src="app.js"></script>
+    // Si no existe sw.js, no intentar cargarlo
+    if ('serviceWorker' in navigator) {
+        // Intentar cargar, pero si falla, continuar igual
+        navigator.serviceWorker.register('sw.js')
+            .then(() => console.log('Service Worker registrado'))
+            .catch(() => console.log('Sin Service Worker - funciona igual'));
+    }
+</script>
+
+<script src="app.js"></script>
 </body>
 </html>
