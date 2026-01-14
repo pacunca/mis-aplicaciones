@@ -12,6 +12,7 @@ let audioActual = null;             // Controla el sonido que suena
 
 function abrirTeclado() {
     document.getElementById('numpad-overlay').classList.add('active');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
 function cerrarTeclado() {
@@ -49,11 +50,11 @@ function verificarAcceso() {
 }
 
 // ==========================================
-// LÓGICA DE CONFIGURACIÓN (CLAVE MAESTRA)
+// LÓGICA DE CONFIGURACIÓN
 // ==========================================
 
 function intentarConfiguracion() {
-    const password = prompt("Ingrese Clave Maestra para Configuración:");
+    const password = prompt("Ingrese Clave Maestra:");
     if (password === CLAVE_MAESTRA) {
         document.getElementById('home-screen').classList.add('hidden');
         document.getElementById('config-screen').classList.remove('hidden');
@@ -68,21 +69,7 @@ function irAHome() {
 }
 
 function cambiarPinApp() {
-    const actual = document.getElementById('pin-actual').value;
-    const nuevo = document.getElementById('pin-nuevo').value;
-    const confirma = document.getElementById('pin-confirma').value;
-
-    if (actual === PIN_APP) {
-        if (nuevo === confirma && nuevo.length >= 4) {
-            PIN_APP = nuevo;
-            alert("ÉXITO: El PIN de la App ha sido cambiado.");
-            irAHome();
-        } else {
-            alert("Error: El nuevo PIN no coincide o es muy corto.");
-        }
-    } else {
-        alert("Error: El PIN actual es incorrecto.");
-    }
+    alert("Función en mantenimiento: El cambio de PIN global se configurará con la base de datos.");
 }
 
 // ==========================================
@@ -97,71 +84,64 @@ function cerrarAyuda() {
     document.getElementById('help-modal').classList.add('hidden');
 }
 
-// Abre el archivo PDF de instrucciones desde el enlace externo de GitHub
 function abrirPDF() {
-    const link = document.createElement('a');
-    // Enlace directo configurado para descarga
-    link.href = 'https://pacunca.github.io/mis-aplicaciones/instrucciones.pdf';
-    link.download = 'Instrucciones_Campanas.pdf'; 
-    link.target = '_blank';
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+    window.open('https://pacunca.github.io/mis-aplicaciones/instrucciones.pdf', '_blank');
 }
 
 // ==========================================
-// SISTEMA DE REPRODUCCIÓN Y ESTADO DE AUDIO
+// SISTEMA DE REPRODUCCIÓN Y PARADA REFORZADA
 // ==========================================
 
-// Actualiza visualmente la barra de estado (Indicador Bluetooth)
 function actualizarEstadoAudio(mensaje, activo) {
     const statusBox = document.querySelector('.status-bar');
     const statusText = statusBox.querySelector('span');
     
     statusText.innerText = mensaje;
     if (activo) {
-        statusBox.style.background = "#D4EDDA"; // Verde si suena
+        statusBox.style.background = "#D4EDDA"; 
         statusBox.style.color = "#155724";
+        statusBox.style.borderColor = "#c3e6cb";
     } else {
-        statusBox.style.background = "#FFF3CD"; // Amarillo/Original
+        statusBox.style.background = "#FFF3CD"; 
         statusBox.style.color = "#856404";
+        statusBox.style.borderColor = "rgba(0,0,0,0.05)";
     }
 }
 
 function playAudio(archivo) {
-    if (audioActual) {
-        audioActual.pause();
-        audioActual.currentTime = 0;
-    }
+    // Si ya hay algo sonando, lo destruimos antes de empezar el nuevo
+    detenerSonido();
     
     audioActual = new Audio(archivo);
     actualizarEstadoAudio("🔔 Reproduciendo...", true);
     
     audioActual.play().catch(error => {
-        console.error("Error al reproducir:", archivo);
         actualizarEstadoAudio("Audio Bluetooth Listo", false);
-        alert("Error: No se pudo reproducir el audio. Verifique su conexión Bluetooth.");
+        alert("Error: Verifique la conexión Bluetooth.");
     });
 
-    // Al finalizar el audio, la barra vuelve al estado original
     audioActual.onended = () => {
-        actualizarEstadoAudio("Audio Bluetooth Listo", false);
+        detenerSonido();
     };
 }
 
+/**
+ * FUNCIÓN REFORZADA: Se asegura de detener el audio y 
+ * vaciar la memoria con un solo clic.
+ */
 function detenerSonido() {
     if (audioActual) {
         audioActual.pause();
         audioActual.currentTime = 0;
-        actualizarEstadoAudio("Audio Bluetooth Listo", false);
+        audioActual.src = ""; // Vacía el archivo cargado
+        audioActual.load();   // Fuerza al navegador a liberar el recurso
+        audioActual = null;   // Limpia la variable
     }
+    actualizarEstadoAudio("Audio Bluetooth Listo", false);
 }
 
-// Lógica de seguridad para el botón de emergencia
 function confirmarEmergencia() {
-    const respuesta = confirm("⚠️ ADVERTENCIA: ¿Está seguro de que desea activar la alarma de EMERGENCIA? Esto notificará a toda la comunidad.");
-    
-    if (respuesta) {
+    if (confirm("⚠️ ADVERTENCIA: ¿Está seguro de activar la alarma?")) {
         playAudio('emergencia.mp3');
     }
 }
