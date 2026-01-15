@@ -563,259 +563,98 @@
     </div>
 
     <!-- SCRIPTS CRÍTICOS - Optimizados para PWA -->
+           <!-- SCRIPT SIMPLIFICADO Y SEGURO -->
     <script>
-        // Script de inicialización mejorado para PWA offline
-        (function() {
-            console.log('🔔 Campanas Parroquiales - Iniciando en modo PWA');
-            
-            // Detectar si estamos en modo standalone (ya instalado)
-            const isStandalone = window.matchMedia('(display-mode: standalone)').matches || 
-                                window.navigator.standalone === true;
-            
-            // Actualizar título si está instalado
-            if (isStandalone) {
-                document.title = 'Campanas (Offline)';
-                console.log('📱 Modo standalone detectado - Aplicación instalada');
-                
-                // Ocultar elementos de instalación
-                setTimeout(() => {
-                    const installElements = document.querySelectorAll('.install-advice, #install-container');
-                    installElements.forEach(el => {
-                        if (el) el.style.display = 'none';
-                    });
-                }, 100);
+        console.log('🔔 PWA Campanas - Iniciando...');
+        
+        // 1. Estado básico
+        window.appEstado = {
+            cargada: false,
+            swRegistrado: false,
+            esPWA: window.matchMedia('(display-mode: standalone)').matches || 
+                   window.navigator.standalone === true
+        };
+        
+        // 2. Función SEGURA para registrar SW
+        function registrarSW() {
+            if (!('serviceWorker' in navigator)) {
+                console.log('ℹ️ SW no soportado');
+                return;
             }
             
-            // Verificar conexión inicial
-            function updateOnlineStatus() {
-                const online = navigator.onLine;
-                const indicator = document.getElementById('offline-indicator');
-                const offlineText = document.getElementById('offline-text');
-                const onlineStatus = document.getElementById('online-status');
-                const offlineStatus = document.getElementById('offline-status');
-                
-                if (indicator && offlineText) {
-                    if (online) {
-                        indicator.classList.remove('offline');
-                        offlineText.textContent = '✅ Conectado a internet';
-                    } else {
-                        indicator.classList.add('offline');
-                        offlineText.textContent = '📴 Funcionando en modo offline';
-                    }
-                    
-                    // Mostrar indicador brevemente
-                    indicator.classList.add('show');
-                    setTimeout(() => {
-                        indicator.classList.remove('show');
-                    }, 3000);
-                }
-                
-                // Actualizar en pantalla principal
-                if (onlineStatus && offlineStatus) {
-                    if (online) {
-                        onlineStatus.style.display = 'inline';
-                        offlineStatus.style.display = 'none';
-                    } else {
-                        onlineStatus.style.display = 'none';
-                        offlineStatus.style.display = 'inline';
-                    }
-                }
-            }
-            
-            // Inicializar estado de conexión
-            updateOnlineStatus();
-            window.addEventListener('online', updateOnlineStatus);
-            window.addEventListener('offline', updateOnlineStatus);
-            
-            // Registrar Service Worker para PWA offline
-            if ('serviceWorker' in navigator) {
-                // Esperar a que la página cargue completamente
-                window.addEventListener('load', function() {
-                    // Registrar con estrategia agresiva
-                    navigator.serviceWorker.register('sw.js', {
-                        scope: './',
-                        updateViaCache: 'none'
-                    })
-                    .then(function(registration) {
-                        console.log('✅ Service Worker registrado exitosamente:', registration.scope);
-                        
-                        // Forzar actualización si hay conexión
-                        if (navigator.onLine) {
-                            registration.update();
-                        }
-                        
-                        // Verificar si hay una nueva versión esperando
-                        if (registration.waiting) {
-                            console.log('🔄 Nueva versión del Service Worker esperando');
-                            mostrarNotificacion('Nueva versión disponible. Recargue para actualizar.');
-                        }
-                        
-                        // Escuchar actualizaciones
-                        registration.addEventListener('updatefound', function() {
-                            console.log('🔄 Nueva versión del Service Worker encontrada');
-                            const newWorker = registration.installing;
-                            
-                            newWorker.addEventListener('statechange', function() {
-                                if (this.state === 'installed' && navigator.serviceWorker.controller) {
-                                    console.log('✨ Nueva versión instalada - Lista para activar');
-                                    mostrarNotificacion('Actualización lista. Recargue para aplicar cambios.');
-                                }
-                            });
-                        });
-                    })
-                    .catch(function(error) {
-                        console.error('❌ Error registrando Service Worker:', error);
+            // Limpiar SWs problemáticos primero
+            navigator.serviceWorker.getRegistrations()
+                .then(regs => {
+                    regs.forEach(reg => {
+                        console.log('🗑️ Limpiando SW previo:', reg.scope);
+                        reg.unregister();
                     });
+                })
+                .then(() => {
+                    // Registrar NUEVO SW simple
+                    return navigator.serviceWorker.register('sw-simple.js', {
+                        scope: './'
+                    });
+                })
+                .then(reg => {
+                    console.log('✅ SW registrado:', reg.scope);
+                    window.appEstado.swRegistrado = true;
+                })
+                .catch(err => {
+                    console.error('❌ Error SW:', err);
+                    // Continuar sin SW
                 });
-            } else {
-                console.warn('⚠️ Service Worker no soportado - La aplicación funcionará en modo online');
-            }
+        }
+        
+        // 3. Esperar a que cargue la página
+        window.addEventListener('load', () => {
+            console.log('📄 Página cargada');
             
-            // Función para mostrar notificaciones flotantes
-            window.mostrarNotificacion = function(mensaje, duracion = 3000) {
-                const notification = document.getElementById('floating-notification');
-                if (notification) {
-                    notification.textContent = mensaje;
-                    notification.classList.add('show');
-                    
-                    setTimeout(() => {
-                        notification.classList.remove('show');
-                    }, duracion);
-                } else {
-                    console.log('💬 ' + mensaje);
-                }
-            };
+            // Registrar SW después de 1 segundo
+            setTimeout(registrarSW, 1000);
             
-            // Función para verificar estado del Service Worker
-            window.verificarEstadoSW = function() {
-                if ('serviceWorker' in navigator) {
-                    navigator.serviceWorker.getRegistration().then(registration => {
-                        if (registration) {
-                            const swStatus = document.getElementById('sw-status');
-                            if (swStatus) {
-                                swStatus.textContent = '✅ Activo';
-                                swStatus.style.color = '#10B981';
-                            }
-                            
-                            // Verificar cache
-                            if ('caches' in window) {
-                                caches.open('campanas-pwav1').then(cache => {
-                                    cache.keys().then(keys => {
-                                        const cacheStatus = document.getElementById('cache-status');
-                                        if (cacheStatus) {
-                                            const total = keys.length;
-                                            cacheStatus.textContent = `✅ ${total} archivos cacheados`;
-                                            cacheStatus.style.color = '#10B981';
-                                        }
-                                    });
-                                });
-                            }
-                        } else {
-                            const swStatus = document.getElementById('sw-status');
-                            if (swStatus) {
-                                swStatus.textContent = '❌ Inactivo';
-                                swStatus.style.color = '#EF4444';
-                            }
-                        }
-                    });
-                }
-            };
-            
-            // Función para recachear recursos
-            window.recachearRecursosFaltantes = function() {
-                if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
-                    navigator.serviceWorker.controller.postMessage({
-                        type: 'FORZAR_ACTUALIZACION'
-                    });
-                    mostrarNotificacion('🔄 Recacheando recursos...');
-                    
-                    setTimeout(() => {
-                        location.reload();
-                    }, 1500);
-                } else {
-                    mostrarNotificacion('⚠️ Service Worker no disponible');
-                }
-            };
-            
-            // Función para forzar actualización
-            window.forzarActualizacionSW = function() {
-                if ('serviceWorker' in navigator) {
-                    navigator.serviceWorker.getRegistration().then(registration => {
-                        if (registration) {
-                            registration.update();
-                            mostrarNotificacion('🔄 Buscando actualizaciones...');
-                            
-                            setTimeout(() => {
-                                location.reload();
-                            }, 2000);
-                        }
-                    });
-                }
-            };
-            
-            // Mostrar notificación de bienvenida
+            // Enfocar input PIN
             setTimeout(() => {
-                if (isStandalone) {
-                    mostrarNotificacion('✅ Aplicación instalada - Lista para uso offline');
+                const pinInput = document.getElementById('pin-input');
+                if (pinInput) {
+                    pinInput.focus();
+                    console.log('🎯 Input enfocado');
                 }
-            }, 1500);
+            }, 500);
             
-            console.log('✅ Sistema de inicialización PWA cargado');
-        })();
+            window.appEstado.cargada = true;
+        });
+        
+        // 4. Botón de emergencia si se congela
+        setTimeout(() => {
+            if (!window.appEstado.cargada) {
+                const btn = document.createElement('button');
+                btn.innerHTML = '🔄 REINICIAR APP';
+                btn.style.cssText = `
+                    position: fixed;
+                    top: 20px;
+                    right: 20px;
+                    background: #DC2626;
+                    color: white;
+                    padding: 10px 15px;
+                    border-radius: 8px;
+                    border: none;
+                    font-weight: bold;
+                    z-index: 9999;
+                `;
+                btn.onclick = () => {
+                    if ('serviceWorker' in navigator) {
+                        navigator.serviceWorker.getRegistrations()
+                            .then(regs => regs.forEach(r => r.unregister()));
+                    }
+                    location.reload();
+                };
+                document.body.appendChild(btn);
+            }
+        }, 5000);
     </script>
     
-<!-- Script de emergencia para bucles infinitos -->
-<script>
-  // Detectar bucles de recarga
-  (function() {
-    // Contador de recargas
-    let reloadCount = sessionStorage.getItem('reloadCount') || 0;
-    reloadCount++;
-    sessionStorage.setItem('reloadCount', reloadCount);
-    
-    console.log('🔄 Recarga #' + reloadCount);
-    
-    // Si hay más de 3 recargas en 5 segundos, hay un bucle
-    if (reloadCount > 3) {
-      console.error('🔄 BUCLE INFINITO DETECTADO - Tomando medidas');
-      
-      // 1. Limpiar sessionStorage
-      sessionStorage.removeItem('reloadCount');
-      
-      // 2. Desregistrar Service Worker
-      if ('serviceWorker' in navigator) {
-        navigator.serviceWorker.getRegistrations().then(registrations => {
-          registrations.forEach(registration => {
-            registration.unregister();
-            console.log('🗑️ SW desregistrado');
-          });
-        });
-      }
-      
-      // 3. Limpiar caches
-      if ('caches' in window) {
-        caches.keys().then(cacheNames => {
-          cacheNames.forEach(cacheName => {
-            caches.delete(cacheName);
-            console.log('🗑️ Cache limpiada:', cacheName);
-          });
-        });
-      }
-      
-      // 4. Recargar sin SW
-      setTimeout(() => {
-        window.location.href = window.location.href + '?nocache=' + Date.now();
-      }, 500);
-    }
-    
-    // Resetear contador después de 5 segundos
-    setTimeout(() => {
-      sessionStorage.setItem('reloadCount', 0);
-    }, 5000);
-  })();
-</script>
-
-    <!-- Script principal -->
-    <script src="app.js" defer></script>
+    <!-- Script principal SIN defer -->
+    <script src="app-simple.js"></script>
 </body>
 </html>
