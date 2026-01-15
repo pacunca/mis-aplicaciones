@@ -1,31 +1,168 @@
 {
+  "id": "/campanas-parroquiales/",
   "name": "Campanas Parroquiales",
   "short_name": "Campanas",
-  "description": "Sistema de Control de Campanas para templos religiosos",
+  "description": "Sistema de Control de Campanas para templos religiosos - Funciona 100% offline",
   "start_url": "./index.html",
-  "scope": "./",
+  "scope": "/",
   "display": "standalone",
+  "display_override": ["standalone", "minimal-ui", "window-controls-overlay"],
   "orientation": "portrait",
   "background_color": "#FAF7F0",
   "theme_color": "#5D4E37",
   "icons": [
     {
-      "src": "icon-192.png",
+      "src": "./icon-192.png",
       "sizes": "192x192",
-      "type": "image/png"
+      "type": "image/png",
+      "purpose": "any maskable"
     },
     {
-      "src": "icon-512.png",
+      "src": "./icon-512.png",
       "sizes": "512x512",
-      "type": "image/png"
+      "type": "image/png",
+      "purpose": "any maskable"
     },
     {
-      "src": "icono.png",
+      "src": "./icon-96.png",
+      "sizes": "96x96",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "./icon-144.png",
       "sizes": "144x144",
-      "type": "image/png"
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "./icon-180.png",
+      "sizes": "180x180",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "./icon-256.png",
+      "sizes": "256x256",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "./icon-384.png",
+      "sizes": "384x384",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "./icon-1024.png",
+      "sizes": "1024x1024",
+      "type": "image/png",
+      "purpose": "any maskable"
     }
   ],
-  "categories": ["utilities", "productivity"],
+  "screenshots": [
+    {
+      "src": "./screenshot-mobile.png",
+      "sizes": "720x1280",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "Pantalla de login de Campanas Parroquiales"
+    },
+    {
+      "src": "./screenshot-tablet.png",
+      "sizes": "1280x720",
+      "type": "image/png",
+      "form_factor": "wide",
+      "label": "Pantalla principal de control de campanas"
+    }
+  ],
+  "categories": ["utilities", "productivity", "music"],
   "lang": "es",
-  "dir": "ltr"
+  "dir": "ltr",
+  "protocol_handlers": [
+    {
+      "protocol": "web+campanas",
+      "url": "/?campana=%s"
+    }
+  ],
+  "edge_side_panel": {
+    "preferred_width": 400
+  },
+  "permissions": [
+    "storage",
+    "notifications"
+  ],
+  "shortcuts": [
+    {
+      "name": "Primer Toque",
+      "short_name": "Toque 1",
+      "description": "Activar primer toque de campana",
+      "url": "./index.html?toque=1",
+      "icons": [{ "src": "./icon-96.png", "sizes": "96x96" }]
+    },
+    {
+      "name": "Alerta de Emergencia",
+      "short_name": "Emergencia",
+      "description": "Activar alarma de emergencia",
+      "url": "./index.html?emergencia=1",
+      "icons": [{ "src": "./icon-96.png", "sizes": "96x96" }]
+    },
+    {
+      "name": "Configuración",
+      "short_name": "Config",
+      "description": "Abrir configuración de la aplicación",
+      "url": "./index.html?config=1",
+      "icons": [{ "src": "./icon-96.png", "sizes": "96x96" }]
+    }
+  ],
+  "handle_links": "preferred",
+  "launch_handler": {
+    "client_mode": "focus-existing"
+  },
+  "file_handlers": [
+    {
+      "action": "./index.html",
+      "accept": {
+        "audio/mpeg": [".mp3"]
+      },
+      "icons": [
+        {
+          "src": "./icon-96.png",
+          "sizes": "96x96",
+          "type": "image/png"
+        }
+      ],
+      "launch_type": "single-client"
+    }
+  ],
+  "share_target": {
+    "action": "./index.html",
+    "method": "GET",
+    "enctype": "application/x-www-form-urlencoded",
+    "params": {
+      "title": "name",
+      "text": "description",
+      "url": "link"
+    }
+  },
+  "related_applications": [
+    {
+      "platform": "webapp",
+      "url": "https://tu-dominio.com/manifest.json"
+    }
+  ],
+  "prefer_related_applications": false,
+  "iarc_rating_id": "e5c8b0a0-0000-0000-0000-000000000000",
+  "features": [
+    "cross-origin-isolated",
+    "web-share",
+    "storage-access-api",
+    "run-on-os-login"
+  ],
+  "serviceworker": {
+    "src": "./sw.js",
+    "scope": "/",
+    "use_cache": true,
+    "update_via_cache": "none"
+  }
 }
