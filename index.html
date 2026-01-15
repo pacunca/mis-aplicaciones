@@ -6,6 +6,9 @@
     <meta name="theme-color" content="#5D4E37">
     <meta name="description" content="Sistema de Control de Campanas Parroquiales - Funciona 100% offline">
     
+    <!-- META TAG PARA BLUETOOTH -->
+    <meta name="bluetooth" content="lowEnergy">
+    
     <!-- PWA Meta Tags MEJORADOS -->
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
@@ -19,10 +22,14 @@
     <link rel="apple-touch-icon" sizes="180x180" href="icon-192.png">
     <link rel="apple-touch-icon" sizes="167x167" href="icon-192.png">
     
-    <!-- PRELOAD CRÍTICO para carga más rápida -->
+    <!-- PRELOAD CRÍTICO COMPLETO con crossorigin para CORS -->
     <link rel="preload" href="style.css" as="style">
     <link rel="preload" href="app.js" as="script">
-    <link rel="preload" href="campana1.mp3" as="audio" type="audio/mpeg">
+    <link rel="preload" href="campana1.mp3" as="audio" type="audio/mpeg" crossorigin="anonymous">
+    <link rel="preload" href="campana2.mp3" as="audio" type="audio/mpeg" crossorigin="anonymous">
+    <link rel="preload" href="campana3.mp3" as="audio" type="audio/mpeg" crossorigin="anonymous">
+    <link rel="preload" href="emergencia.mp3" as="audio" type="audio/mpeg" crossorigin="anonymous">
+    <link rel="preload" href="instrucciones.pdf" as="document" type="application/pdf">
     <link rel="preload" href="icon-192.png" as="image" type="image/png">
     
     <title>Campanas Parroquiales - Control Offline</title>
@@ -32,7 +39,7 @@
     
     <!-- Estilos optimizados para PWA offline -->
     <style>
-        /* Indicador de estado offline */
+        /* Indicador de estado offline - SIN TRANSFORM */
         .offline-indicator {
             position: fixed;
             top: 0;
@@ -45,25 +52,25 @@
             font-size: 13px;
             font-weight: 600;
             z-index: 9998;
-            transform: translateY(-100%);
-            transition: transform 0.3s ease;
+            top: -100%; /* En lugar de transform: translateY(-100%) */
+            transition: top 0.3s ease;
             box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
         }
         
         .offline-indicator.show {
-            transform: translateY(0);
+            top: 0; /* En lugar de transform: translateY(0) */
         }
         
         .offline-indicator.offline {
             background: linear-gradient(90deg, #F59E0B 0%, #D97706 100%);
         }
         
-        /* Notificación flotante */
+        /* Notificación flotante - SIN TRANSFORM y SIN backdrop-filter */
         .floating-notification {
             position: fixed;
-            bottom: 100px;
+            bottom: -100px; /* En lugar de transform: translateY(100px) */
             left: 50%;
-            transform: translateX(-50%) translateY(100px);
+            transform: translateX(-50%);
             background: rgba(0, 0, 0, 0.9);
             color: white;
             padding: 12px 20px;
@@ -73,12 +80,12 @@
             max-width: 85%;
             text-align: center;
             box-shadow: 0 4px 20px rgba(0,0,0,0.3);
-            transition: transform 0.3s ease;
-            backdrop-filter: blur(10px);
+            transition: bottom 0.3s ease;
+            /* backdrop-filter: blur(10px); ELIMINADO - No soportado universalmente */
         }
         
         .floating-notification.show {
-            transform: translateX(-50%) translateY(0);
+            bottom: 100px; /* En lugar de transform: translateY(0) */
         }
         
         /* Mejoras para modo standalone */
@@ -242,14 +249,14 @@
             margin: 3px 0;
         }
         
-        /* Animaciones de carga */
-        @keyframes pulse {
+        /* Animación de carga simplificada */
+        @keyframes pulse-simple {
             0%, 100% { opacity: 1; }
-            50% { opacity: 0.5; }
+            50% { opacity: 0.7; }
         }
         
         .loading {
-            animation: pulse 1.5s ease-in-out infinite;
+            animation: pulse-simple 1.5s ease-in-out infinite;
         }
         
         /* Mejoras de accesibilidad */
@@ -258,6 +265,11 @@
                 animation-duration: 0.01ms !important;
                 animation-iteration-count: 1 !important;
                 transition-duration: 0.01ms !important;
+            }
+            
+            .loading {
+                animation: none;
+                opacity: 0.8;
             }
         }
         
@@ -298,8 +310,9 @@
         <span id="offline-text">✅ Aplicación lista para funcionar offline</span>
     </div>
     
-    <!-- NOTIFICACIÓN FLOTANTE -->
-    <div id="floating-notification" class="floating-notification"></div>
+    <!-- NOTIFICACIÓN FLOTANTE CON ARIA-LIVE -->
+    <div id="floating-notification" class="floating-notification" 
+         aria-live="polite" aria-atomic="true"></div>
     
     <div id="app-container">
         <!-- PANTALLA DE LOGIN -->
@@ -562,99 +575,242 @@
         </div>
     </div>
 
+    <!-- MODALES PARA REEMPLAZAR alert() Y prompt() -->
+    <div id="custom-alert" class="modal-overlay hidden">
+        <div class="modal-content">
+            <p id="alert-message"></p>
+            <button class="main-btn" onclick="cerrarAlert()" style="margin-top: 20px;">OK</button>
+        </div>
+    </div>
+
+    <div id="custom-prompt" class="modal-overlay hidden">
+        <div class="modal-content">
+            <p id="prompt-message"></p>
+            <input type="text" id="prompt-input" style="
+                width: 100%;
+                padding: 12px;
+                margin: 15px 0;
+                border: 2px solid #8B7355;
+                border-radius: 8px;
+                font-size: 16px;
+                box-sizing: border-box;
+            ">
+            <div style="display: flex; gap: 10px; margin-top: 20px;">
+                <button class="outline-btn" onclick="cancelarPrompt()" style="flex: 1;">Cancelar</button>
+                <button class="main-btn" onclick="confirmarPrompt()" style="flex: 1;">Aceptar</button>
+            </div>
+        </div>
+    </div>
+
     <!-- SCRIPTS CRÍTICOS - Optimizados para PWA -->
-           <!-- SCRIPT SIMPLIFICADO Y SEGURO -->
     <script>
-        console.log('🔔 PWA Campanas - Iniciando...');
-        
-        // 1. Estado básico
-        window.appEstado = {
-            cargada: false,
-            swRegistrado: false,
-            esPWA: window.matchMedia('(display-mode: standalone)').matches || 
-                   window.navigator.standalone === true
-        };
-        
-        // 2. Función SEGURA para registrar SW
-        function registrarSW() {
-            if (!('serviceWorker' in navigator)) {
-                console.log('ℹ️ SW no soportado');
-                return;
+        // Script de inicialización mejorado para PWA offline
+        (function() {
+            console.log('🔔 Campanas Parroquiales - Iniciando en modo PWA');
+            
+            // Detectar si estamos en modo standalone (ya instalado)
+            const isStandalone = window.matchMedia('(display-mode: standalone)').matches || 
+                                window.navigator.standalone === true;
+            
+            // Actualizar título si está instalado
+            if (isStandalone) {
+                document.title = 'Campanas (Offline)';
+                console.log('📱 Modo standalone detectado - Aplicación instalada');
+                
+                // Ocultar elementos de instalación
+                setTimeout(() => {
+                    const installElements = document.querySelectorAll('.install-advice, #install-container');
+                    installElements.forEach(el => {
+                        if (el) el.style.display = 'none';
+                    });
+                }, 100);
             }
             
-            // Limpiar SWs problemáticos primero
-            navigator.serviceWorker.getRegistrations()
-                .then(regs => {
-                    regs.forEach(reg => {
-                        console.log('🗑️ Limpiando SW previo:', reg.scope);
-                        reg.unregister();
-                    });
-                })
-                .then(() => {
-                    // Registrar NUEVO SW simple
-                    return navigator.serviceWorker.register('sw-simple.js', {
-                        scope: './'
-                    });
-                })
-                .then(reg => {
-                    console.log('✅ SW registrado:', reg.scope);
-                    window.appEstado.swRegistrado = true;
-                })
-                .catch(err => {
-                    console.error('❌ Error SW:', err);
-                    // Continuar sin SW
-                });
-        }
-        
-        // 3. Esperar a que cargue la página
-        window.addEventListener('load', () => {
-            console.log('📄 Página cargada');
-            
-            // Registrar SW después de 1 segundo
-            setTimeout(registrarSW, 1000);
-            
-            // Enfocar input PIN
-            setTimeout(() => {
-                const pinInput = document.getElementById('pin-input');
-                if (pinInput) {
-                    pinInput.focus();
-                    console.log('🎯 Input enfocado');
-                }
-            }, 500);
-            
-            window.appEstado.cargada = true;
-        });
-        
-        // 4. Botón de emergencia si se congela
-        setTimeout(() => {
-            if (!window.appEstado.cargada) {
-                const btn = document.createElement('button');
-                btn.innerHTML = '🔄 REINICIAR APP';
-                btn.style.cssText = `
-                    position: fixed;
-                    top: 20px;
-                    right: 20px;
-                    background: #DC2626;
-                    color: white;
-                    padding: 10px 15px;
-                    border-radius: 8px;
-                    border: none;
-                    font-weight: bold;
-                    z-index: 9999;
-                `;
-                btn.onclick = () => {
-                    if ('serviceWorker' in navigator) {
-                        navigator.serviceWorker.getRegistrations()
-                            .then(regs => regs.forEach(r => r.unregister()));
+            // Verificar conexión inicial
+            function updateOnlineStatus() {
+                const online = navigator.onLine;
+                const indicator = document.getElementById('offline-indicator');
+                const offlineText = document.getElementById('offline-text');
+                const onlineStatus = document.getElementById('online-status');
+                const offlineStatus = document.getElementById('offline-status');
+                
+                if (indicator && offlineText) {
+                    if (online) {
+                        indicator.classList.remove('offline');
+                        offlineText.textContent = '✅ Conectado a internet';
+                    } else {
+                        indicator.classList.add('offline');
+                        offlineText.textContent = '📴 Funcionando en modo offline';
                     }
-                    location.reload();
-                };
-                document.body.appendChild(btn);
+                    
+                    // Mostrar indicador brevemente
+                    indicator.classList.add('show');
+                    setTimeout(() => {
+                        indicator.classList.remove('show');
+                    }, 3000);
+                }
+                
+                // Actualizar en pantalla principal
+                if (onlineStatus && offlineStatus) {
+                    if (online) {
+                        onlineStatus.style.display = 'inline';
+                        offlineStatus.style.display = 'none';
+                    } else {
+                        onlineStatus.style.display = 'none';
+                        offlineStatus.style.display = 'inline';
+                    }
+                }
             }
-        }, 5000);
+            
+            // Inicializar estado de conexión
+            updateOnlineStatus();
+            window.addEventListener('online', updateOnlineStatus);
+            window.addEventListener('offline', updateOnlineStatus);
+            
+            // Registrar Service Worker para PWA offline
+            if ('serviceWorker' in navigator) {
+                // Esperar a que la página cargue completamente
+                window.addEventListener('load', function() {
+                    // Registrar con estrategia agresiva
+                    navigator.serviceWorker.register('sw.js', {
+                        scope: './',
+                        updateViaCache: 'none'
+                    })
+                    .then(function(registration) {
+                        console.log('✅ Service Worker registrado exitosamente:', registration.scope);
+                        
+                        // Forzar actualización si hay conexión
+                        if (navigator.onLine) {
+                            registration.update();
+                        }
+                        
+                        // Verificar si hay una nueva versión esperando
+                        if (registration.waiting) {
+                            console.log('🔄 Nueva versión del Service Worker esperando');
+                            mostrarNotificacion('Nueva versión disponible. Recargue para actualizar.');
+                        }
+                        
+                        // Escuchar actualizaciones
+                        registration.addEventListener('updatefound', function() {
+                            console.log('🔄 Nueva versión del Service Worker encontrada');
+                            const newWorker = registration.installing;
+                            
+                            newWorker.addEventListener('statechange', function() {
+                                if (this.state === 'installed' && navigator.serviceWorker.controller) {
+                                    console.log('✨ Nueva versión instalada - Lista para activar');
+                                    mostrarNotificacion('Actualización lista. Recargue para aplicar cambios.');
+                                }
+                            });
+                        });
+                    })
+                    .catch(function(error) {
+                        console.error('❌ Error registrando Service Worker:', error);
+                    });
+                });
+            } else {
+                console.warn('⚠️ Service Worker no soportado - La aplicación funcionará en modo online');
+            }
+            
+            // Función para mostrar notificaciones flotantes
+            window.mostrarNotificacion = function(mensaje, duracion = 3000) {
+                const notification = document.getElementById('floating-notification');
+                if (notification) {
+                    notification.textContent = mensaje;
+                    notification.classList.add('show');
+                    
+                    setTimeout(() => {
+                        notification.classList.remove('show');
+                    }, duracion);
+                } else {
+                    console.log('💬 ' + mensaje);
+                }
+            };
+            
+            // Función para verificar estado del Service Worker
+            window.verificarEstadoSW = function() {
+                if ('serviceWorker' in navigator) {
+                    navigator.serviceWorker.getRegistration().then(registration => {
+                        if (registration) {
+                            const swStatus = document.getElementById('sw-status');
+                            if (swStatus) {
+                                swStatus.textContent = '✅ Activo';
+                                swStatus.style.color = '#10B981';
+                            }
+                            
+                            // Verificar cache
+                            if ('caches' in window) {
+                                caches.open('campanas-pwav1').then(cache => {
+                                    cache.keys().then(keys => {
+                                        const cacheStatus = document.getElementById('cache-status');
+                                        if (cacheStatus) {
+                                            const total = keys.length;
+                                            cacheStatus.textContent = `✅ ${total} archivos cacheados`;
+                                            cacheStatus.style.color = '#10B981';
+                                        }
+                                    });
+                                });
+                            }
+                        } else {
+                            const swStatus = document.getElementById('sw-status');
+                            if (swStatus) {
+                                swStatus.textContent = '❌ Inactivo';
+                                swStatus.style.color = '#EF4444';
+                            }
+                        }
+                    });
+                }
+            };
+            
+            // Función para recachear recursos
+            window.recachearRecursosFaltantes = function() {
+                if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
+                    navigator.serviceWorker.controller.postMessage({
+                        type: 'FORZAR_ACTUALIZACION'
+                    });
+                    mostrarNotificacion('🔄 Recacheando recursos...');
+                    
+                    setTimeout(() => {
+                        location.reload();
+                    }, 1500);
+                } else {
+                    mostrarNotificacion('⚠️ Service Worker no disponible');
+                }
+            };
+            
+            // Función para forzar actualización
+            window.forzarActualizacionSW = function() {
+                if ('serviceWorker' in navigator) {
+                    navigator.serviceWorker.getRegistration().then(registration => {
+                        if (registration) {
+                            registration.update();
+                            mostrarNotificacion('🔄 Buscando actualizaciones...');
+                            
+                            setTimeout(() => {
+                                location.reload();
+                            }, 2000);
+                        }
+                    });
+                }
+            };
+            
+            // Mostrar notificación de bienvenida
+            setTimeout(() => {
+                if (isStandalone) {
+                    mostrarNotificacion('✅ Aplicación instalada - Lista para uso offline');
+                }
+            }, 1500);
+            
+            console.log('✅ Sistema de inicialización PWA cargado');
+        })();
     </script>
     
-    <!-- Script principal SIN defer -->
-    <script src="app-simple.js"></script>
+    <!-- Script principal con integridad (si tienes el hash) -->
+    <!-- 
+    <script src="app.js" defer crossorigin="anonymous" 
+            integrity="sha384-...tu-hash-aquí..."></script>
+    -->
+    
+    <!-- Versión temporal sin integrity (generar hash después) -->
+    <script src="app.js" defer crossorigin="anonymous"></script>
 </body>
 </html>
