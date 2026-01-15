@@ -1,392 +1,189 @@
 // ==========================================
 // SERVICE WORKER - CAMPANAS PARROQUIALES
-// Versión: 1.0.0
-// Diseñado para funcionar por 20+ años
+// Versión: 1.0.1 (ESTABLE)
 // ==========================================
 
-const CACHE_NAME = 'campanas-pwav1';
-const APP_VERSION = '1.0.0';
-const OFFLINE_FALLBACK = '/index.html';
+const CACHE_NAME = 'campanas-v1';
+const OFFLINE_URL = 'index.html';
 
-// ==========================================
-// LISTA COMPLETA DE RECURSOS A CACHEAR
-// ==========================================
-const ARCHIVOS_CRITICOS = [
-  // Archivos principales
+// Archivos CRÍTICOS que deben cachearse SIEMPRE
+const PRECACHE_URLS = [
   './',
   './index.html',
   './style.css',
   './app.js',
   './manifest.json',
   
-  // Iconos e imágenes
+  // Iconos
   './icon-192.png',
   './icon-512.png',
   './icono.png',
   './icon-96.png',
   './qr_descarga.png',
   
-  // Archivos de audio
+  // Audios (ASEGURARSE que existen)
   './campana1.mp3',
   './campana2.mp3',
   './campana3.mp3',
-  './emergencia.mp3',
-  
-  // Fallbacks
-  OFFLINE_FALLBACK
+  './emergencia.mp3'
 ];
 
 // ==========================================
-// INSTALACIÓN: DESCARGAR TODO INMEDIATAMENTE
+// INSTALACIÓN SEGURA
 // ==========================================
-self.addEventListener('install', function(event) {
-  console.log('🔔 Service Worker: Instalando v' + APP_VERSION);
+self.addEventListener('install', event => {
+  console.log('[SW] Instalando...');
   
-  // Forzar activación inmediata
-  self.skipWaiting();
-  
+  // NO usar skipWaiting() aquí - causa problemas
   event.waitUntil(
     caches.open(CACHE_NAME)
-      .then(function(cache) {
-        console.log('📦 Cache abierto:', CACHE_NAME);
+      .then(cache => {
+        console.log('[SW] Cacheando archivos críticos');
         
-        // Intentar cachear todos los recursos
-        return cache.addAll(ARCHIVOS_CRITICOS.map(url => {
-          // Añadir timestamp para evitar cache del navegador
-          return new Request(url, {
-            cache: 'reload',
-            headers: new Headers({
-              'Pragma': 'no-cache',
-              'Cache-Control': 'no-cache'
-            })
-          });
-        }))
-        .then(function() {
-          console.log('✅ Todos los recursos cacheados:', ARCHIVOS_CRITICOS.length, 'archivos');
-          
-          // Verificar qué se cacheó realmente
-          return cache.keys().then(keys => {
-            console.log('📋 Archivos en cache:', keys.map(k => k.url));
-            
-            // Verificar archivos críticos
-            const cacheados = keys.map(k => new URL(k.url).pathname);
-            const faltantes = ARCHIVOS_CRITICOS.filter(url => 
-              !cacheados.includes(new URL(url, self.location.origin).pathname)
-            );
-            
-            if (faltantes.length > 0) {
-              console.warn('⚠️ Algunos archivos no se cachearon:', faltantes);
-              
-              // Intentar cachearlos individualmente (más robusto)
-              const promesasIndividuales = faltantes.map(url => 
-                cache.add(url).catch(e => {
-                  console.warn('❌ No se pudo cachear:', url, e.message);
-                  return null;
-                })
-              );
-              
-              return Promise.all(promesasIndividuales);
-            }
-            
-            return Promise.resolve();
-          });
-        })
-        .catch(function(error) {
-          console.error('❌ Error durante instalación:', error);
-          
-          // Cachear aunque falle alguno - resiliencia
-          return cache.addAll(ARCHIVOS_CRITICOS.filter((_, i) => i < 5))
-            .then(() => console.log('📱 Recursos críticos cacheados (modo resiliente)'));
-        });
+        // Cachear solo los archivos que EXISTEN
+        return Promise.all(
+          PRECACHE_URLS.map(url => {
+            return fetch(url, { cache: 'reload' })
+              .then(response => {
+                if (response.ok) {
+                  return cache.put(url, response);
+                }
+                console.warn('[SW] No se pudo cachear:', url);
+                return Promise.resolve();
+              })
+              .catch(error => {
+                console.warn('[SW] Error cacheando:', url, error);
+                return Promise.resolve(); // Continuar aunque falle uno
+              });
+          })
+        );
+      })
+      .then(() => {
+        console.log('[SW] Instalación completada');
+        return self.skipWaiting(); // SOLO aquí, después de cachear
       })
   );
 });
 
 // ==========================================
-// ACTIVACIÓN: LIMPIAR CACHÉS ANTIGUOS
+// ACTIVACIÓN SEGURA
 // ==========================================
-self.addEventListener('activate', function(event) {
-  console.log('🔔 Service Worker: Activando v' + APP_VERSION);
+self.addEventListener('activate', event => {
+  console.log('[SW] Activando...');
   
   event.waitUntil(
-    caches.keys().then(function(cacheNames) {
+    // Limpiar caches viejas
+    caches.keys().then(cacheNames => {
       return Promise.all(
-        cacheNames.map(function(cacheName) {
-          // Eliminar cachés antiguas que no sean la actual
+        cacheNames.map(cacheName => {
           if (cacheName !== CACHE_NAME) {
-            console.log('🗑️ Eliminando cache antigua:', cacheName);
+            console.log('[SW] Eliminando cache vieja:', cacheName);
             return caches.delete(cacheName);
           }
         })
       );
     })
-    .then(function() {
-      // Tomar control inmediato de todas las pestañas
-      return self.clients.claim();
-    })
-    .then(function() {
-      console.log('✅ Service Worker activado y listo');
-      
-      // Notificar a todas las pestañas
-      return self.clients.matchAll().then(clients => {
-        clients.forEach(client => {
-          client.postMessage({
-            type: 'SW_ACTIVATED',
-            version: APP_VERSION,
-            cache: CACHE_NAME
-          });
-        });
-      });
+    .then(() => {
+      console.log('[SW] Activación completada');
+      return self.clients.claim(); // Tomar control de las pestañas
     })
   );
 });
 
 // ==========================================
-// ESTRATEGIA DE CACHE: CACHE FIRST + NETWORK FALLBACK
+// ESTRATEGIA DE FETCH SEGURA
 // ==========================================
-self.addEventListener('fetch', function(event) {
-  // Ignorar solicitudes no GET
-  if (event.request.method !== 'GET') {
-    return;
-  }
+self.addEventListener('fetch', event => {
+  // Solo manejar solicitudes GET
+  if (event.request.method !== 'GET') return;
   
-  // Ignorar solicitudes a servidores externos (excepto recursos críticos)
-  const url = new URL(event.request.url);
-  if (url.origin !== self.location.origin) {
-    // Permitir recursos críticos externos (PIN remoto, PDF)
-    if (url.href.includes('pin-actual.txt') || url.href.includes('instrucciones.pdf')) {
-      // Estrategia: Network First con cache fallback para externos
-      event.respondWith(
-        fetch(event.request)
-          .then(response => {
-            // Cachear respuesta exitosa
-            const responseClone = response.clone();
-            caches.open(CACHE_NAME).then(cache => {
-              cache.put(event.request, responseClone);
-            });
-            return response;
-          })
-          .catch(() => {
-            // Si falla la red, intentar desde cache
-            return caches.match(event.request);
-          })
-      );
-    }
-    return; // Ignorar otros externos
-  }
+  // Evitar solicitudes a extensiones del navegador
+  if (event.request.url.startsWith('chrome-extension://')) return;
+  if (event.request.url.includes('extension')) return;
   
-  // ESTRATEGIA PRINCIPAL: CACHE FIRST para recursos locales
-  event.respondWith(
-    caches.match(event.request)
-      .then(function(response) {
-        // Si está en cache, devolverlo (INCLUSO SI HAY INTERNET)
-        if (response) {
-          // Actualizar cache en background si hay conexión
-          if (navigator.onLine) {
-            fetchAndCache(event.request);
+  const requestUrl = new URL(event.request.url);
+  
+  // Para archivos locales, usar Cache First
+  if (requestUrl.origin === location.origin) {
+    event.respondWith(
+      caches.match(event.request)
+        .then(cachedResponse => {
+          // Si está en cache, devolverlo
+          if (cachedResponse) {
+            console.log('[SW] Sirviendo desde cache:', event.request.url);
+            return cachedResponse;
           }
-          return response;
-        }
-        
-        // Si no está en cache, buscar en red
-        return fetchAndCache(event.request)
-          .catch(function(error) {
-            console.log('🌐 Offline - recurso no en cache:', event.request.url);
-            
-            // Fallbacks específicos
-            if (event.request.url.includes('.mp3')) {
-              return new Response(
-                JSON.stringify({ error: 'Audio no disponible offline' }),
-                { headers: { 'Content-Type': 'application/json' } }
-              );
-            }
-            
-            // Fallback genérico
-            return caches.match(OFFLINE_FALLBACK);
+          
+          // Si no está en cache, buscar en red
+          return fetch(event.request)
+            .then(networkResponse => {
+              // Verificar respuesta válida
+              if (!networkResponse || networkResponse.status !== 200) {
+                return networkResponse;
+              }
+              
+              // Clonar respuesta para cache
+              const responseToCache = networkResponse.clone();
+              
+              // Guardar en cache para futuro
+              caches.open(CACHE_NAME)
+                .then(cache => {
+                  cache.put(event.request, responseToCache);
+                  console.log('[SW] Guardado en cache:', event.request.url);
+                });
+              
+              return networkResponse;
+            })
+            .catch(error => {
+              console.error('[SW] Error de red:', error);
+              
+              // Si es la página principal, servir OFFLINE_URL
+              if (event.request.mode === 'navigate') {
+                return caches.match(OFFLINE_URL);
+              }
+              
+              // Para otros recursos, devolver error controlado
+              return new Response('Recurso no disponible offline', {
+                status: 503,
+                statusText: 'Service Unavailable',
+                headers: new Headers({
+                  'Content-Type': 'text/plain'
+                })
+              });
+            });
+        })
+    );
+  } else {
+    // Para recursos externos, Network First
+    event.respondWith(
+      fetch(event.request)
+        .catch(() => {
+          // Si falla la red, NO intentar cache
+          return new Response('Se requiere conexión para este recurso', {
+            status: 408,
+            statusText: 'Network Required'
           });
-      })
-  );
+        })
+    );
+  }
 });
 
 // ==========================================
-// FUNCIÓN AUXILIAR: FETCH Y CACHE
+// MANEJO DE MENSAJES
 // ==========================================
-function fetchAndCache(request) {
-  return fetch(request)
-    .then(function(response) {
-      // Verificar respuesta válida
-      if (!response || response.status !== 200 || response.type !== 'basic') {
-        return response;
-      }
-      
-      // Cachear respuesta
-      const responseToCache = response.clone();
-      caches.open(CACHE_NAME)
-        .then(function(cache) {
-          cache.put(request, responseToCache);
-        });
-      
-      return response;
-    });
-}
-
-// ==========================================
-// MANEJO DE MENSAJES (ACTUALIZACIONES, VERIFICACIÓN)
-// ==========================================
-self.addEventListener('message', function(event) {
-  console.log('📨 Service Worker recibió mensaje:', event.data);
+self.addEventListener('message', event => {
+  console.log('[SW] Mensaje recibido:', event.data);
   
-  if (event.data.type === 'VERIFICAR_CACHE') {
-    // Verificar estado del cache
-    caches.open(CACHE_NAME)
-      .then(cache => cache.keys())
-      .then(keys => {
-        event.ports[0].postMessage({
-          type: 'ESTADO_CACHE',
-          total: keys.length,
-          archivos: keys.map(k => k.url),
-          version: APP_VERSION
-        });
-      });
-  }
-  
-  if (event.data.type === 'FORZAR_ACTUALIZACION') {
-    // Forzar actualización del Service Worker
+  if (event.data && event.data.type === 'SKIP_WAITING') {
     self.skipWaiting();
-    self.clients.claim().then(() => {
-      console.log('🔄 Actualización forzada completada');
-    });
   }
   
-  if (event.data.type === 'LIMPIAR_CACHE') {
-    // Limpiar cache específico
-    caches.delete(CACHE_NAME).then(() => {
-      console.log('🧹 Cache limpiado:', CACHE_NAME);
-    });
-  }
-});
-
-// ==========================================
-// MANEJO DE SINCRONIZACIÓN EN BACKGROUND
-// ==========================================
-self.addEventListener('sync', function(event) {
-  if (event.tag === 'sincronizar-pin') {
-    console.log('🔄 Intentando sincronización en background');
-    event.waitUntil(sincronizarPINBackground());
-  }
-});
-
-async function sincronizarPINBackground() {
-  try {
-    const response = await fetch('https://raw.githubusercontent.com/pacunca/mis-aplicaciones/main/pin-actual.txt');
-    const nuevoPIN = (await response.text()).trim();
-    
-    if (/^\d{4}$/.test(nuevoPIN)) {
-      // Almacenar en IndexedDB o cache
-      const cache = await caches.open(CACHE_NAME);
-      await cache.put(
-        new Request('/pin-remoto-cache'),
-        new Response(JSON.stringify({
-          pin: nuevoPIN,
-          fecha: new Date().toISOString()
-        }))
-      );
-      
-      console.log('✅ PIN sincronizado en background:', nuevoPIN);
-      
-      // Notificar a las pestañas
-      const clients = await self.clients.matchAll();
-      clients.forEach(client => {
-        client.postMessage({
-          type: 'PIN_ACTUALIZADO',
-          pin: nuevoPIN,
-          fecha: new Date().toLocaleString()
-        });
+  if (event.data && event.data.type === 'CLEAR_CACHE') {
+    caches.delete(CACHE_NAME)
+      .then(() => {
+        console.log('[SW] Cache limpiada');
       });
-    }
-  } catch (error) {
-    console.log('❌ Error sincronizando en background:', error);
   }
-}
-
-// ==========================================
-// MANEJO DE PUSH NOTIFICATIONS (FUTURO)
-// ==========================================
-self.addEventListener('push', function(event) {
-  if (!event.data) return;
-  
-  const data = event.data.json();
-  
-  const options = {
-    body: data.body || 'Notificación del sistema de campanas',
-    icon: './icon-192.png',
-    badge: './icon-96.png',
-    vibrate: [100, 50, 100],
-    data: {
-      url: data.url || './'
-    }
-  };
-  
-  event.waitUntil(
-    self.registration.showNotification(data.title || 'Campanas Parroquiales', options)
-  );
 });
 
-self.addEventListener('notificationclick', function(event) {
-  event.notification.close();
-  
-  event.waitUntil(
-    clients.matchAll({ type: 'window' }).then(function(clientList) {
-      for (const client of clientList) {
-        if (client.url === './' && 'focus' in client) {
-          return client.focus();
-        }
-      }
-      if (clients.openWindow) {
-        return clients.openWindow('./');
-      }
-    })
-  );
-});
-
-// ==========================================
-// POLYFILLS PARA COMPATIBILIDAD A LARGO PLAZO
-// ==========================================
-if (typeof caches === 'undefined') {
-  console.warn('⚠️ Cache API no disponible - usando polyfill');
-  // Polyfill básico (simplificado para ejemplo)
-  self.caches = {
-    open: () => Promise.resolve({
-      match: () => Promise.resolve(null),
-      put: () => Promise.resolve(),
-      keys: () => Promise.resolve([]),
-      delete: () => Promise.resolve(true)
-    }),
-    keys: () => Promise.resolve([]),
-    delete: () => Promise.resolve(true)
-  };
-}
-
-// ==========================================
-// LOGGING MEJORADO PARA DEPURACIÓN
-// ==========================================
-const logger = {
-  info: (msg, data) => console.log(`🔔 SW [${APP_VERSION}]: ${msg}`, data || ''),
-  warn: (msg, data) => console.warn(`⚠️ SW [${APP_VERSION}]: ${msg}`, data || ''),
-  error: (msg, data) => console.error(`❌ SW [${APP_VERSION}]: ${msg}`, data || '')
-};
-
-logger.info('Service Worker cargado y listo');
-
-// ==========================================
-// AUTO-VERIFICACIÓN PERIÓDICA
-// ==========================================
-setInterval(() => {
-  caches.open(CACHE_NAME)
-    .then(cache => cache.keys())
-    .then(keys => {
-      if (keys.length < ARCHIVOS_CRITICOS.length * 0.8) {
-        logger.warn('Cache por debajo del 80% - considerando recachear');
-      }
-    });
-}, 1000 * 60 * 60 * 24); // Una vez al día
+console.log('[SW] Cargado y listo');
