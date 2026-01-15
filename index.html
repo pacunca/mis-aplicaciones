@@ -4,26 +4,110 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta name="theme-color" content="#5D4E37">
-    <meta name="description" content="Sistema de Control de Campanas Parroquiales">
+    <meta name="description" content="Sistema de Control de Campanas Parroquiales - Funciona 100% offline">
     
-    <!-- PWA Meta Tags -->
+    <!-- PWA Meta Tags MEJORADOS -->
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="Campanas">
+    <meta name="application-name" content="Campanas Parroquiales">
     
-    <!-- iOS Icons -->
+    <!-- iOS Icons MEJORADOS -->
     <link rel="apple-touch-icon" href="icon-192.png">
     <link rel="apple-touch-icon" sizes="152x152" href="icon-192.png">
     <link rel="apple-touch-icon" sizes="180x180" href="icon-192.png">
+    <link rel="apple-touch-icon" sizes="167x167" href="icon-192.png">
     
-    <title>Campanas Parroquiales</title>
+    <!-- PRELOAD CRÍTICO para carga más rápida -->
+    <link rel="preload" href="style.css" as="style">
+    <link rel="preload" href="app.js" as="script">
+    <link rel="preload" href="campana1.mp3" as="audio" type="audio/mpeg">
+    <link rel="preload" href="icon-192.png" as="image" type="image/png">
+    
+    <title>Campanas Parroquiales - Control Offline</title>
     <link rel="stylesheet" href="style.css">
     <link rel="manifest" href="manifest.json">
-    <link rel="icon" href="icono.png">
+    <link rel="icon" href="icono.png" type="image/png">
     
-    <!-- Estilos simplificados -->
+    <!-- Estilos optimizados para PWA offline -->
     <style>
+        /* Indicador de estado offline */
+        .offline-indicator {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            background: linear-gradient(90deg, #10B981 0%, #059669 100%);
+            color: white;
+            text-align: center;
+            padding: 8px;
+            font-size: 13px;
+            font-weight: 600;
+            z-index: 9998;
+            transform: translateY(-100%);
+            transition: transform 0.3s ease;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+        
+        .offline-indicator.show {
+            transform: translateY(0);
+        }
+        
+        .offline-indicator.offline {
+            background: linear-gradient(90deg, #F59E0B 0%, #D97706 100%);
+        }
+        
+        /* Notificación flotante */
+        .floating-notification {
+            position: fixed;
+            bottom: 100px;
+            left: 50%;
+            transform: translateX(-50%) translateY(100px);
+            background: rgba(0, 0, 0, 0.9);
+            color: white;
+            padding: 12px 20px;
+            border-radius: 12px;
+            z-index: 9997;
+            font-size: 14px;
+            max-width: 85%;
+            text-align: center;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+            transition: transform 0.3s ease;
+            backdrop-filter: blur(10px);
+        }
+        
+        .floating-notification.show {
+            transform: translateX(-50%) translateY(0);
+        }
+        
+        /* Mejoras para modo standalone */
+        @media (display-mode: standalone) {
+            body {
+                -webkit-touch-callout: none;
+                -webkit-user-select: none;
+                user-select: none;
+                overflow: hidden;
+            }
+            
+            /* Ocultar elementos de instalación cuando ya está instalado */
+            .install-advice,
+            #install-container,
+            #install-advice {
+                display: none !important;
+            }
+            
+            /* Mejor padding para safe areas */
+            .screen {
+                padding-top: env(safe-area-inset-top, 20px) !important;
+                padding-bottom: env(safe-area-inset-bottom, 120px) !important;
+            }
+            
+            .bottom-nav {
+                bottom: calc(20px + env(safe-area-inset-bottom, 0px));
+            }
+        }
+        
         /* Instrucciones Bluetooth */
         .bluetooth-instructions {
             background: #E8F4FD;
@@ -86,6 +170,7 @@
             -moz-appearance: none;
             appearance: none;
             font-weight: bold;
+            font-family: monospace;
         }
         
         /* Cambiado de type="password" a type="text" para mostrar números */
@@ -93,6 +178,7 @@
             letter-spacing: normal;
             color: #aaa;
             font-weight: normal;
+            font-family: -apple-system, BlinkMacSystemFont, sans-serif;
         }
         
         #pin-input:focus {
@@ -127,6 +213,12 @@
             text-align: center;
             font-size: 14px;
             color: #1E40AF;
+            transition: all 0.3s ease;
+        }
+        
+        .install-advice:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(59, 130, 246, 0.15);
         }
         
         .install-advice p {
@@ -149,18 +241,78 @@
             display: block;
             margin: 3px 0;
         }
+        
+        /* Animaciones de carga */
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        
+        .loading {
+            animation: pulse 1.5s ease-in-out infinite;
+        }
+        
+        /* Mejoras de accesibilidad */
+        @media (prefers-reduced-motion: reduce) {
+            * {
+                animation-duration: 0.01ms !important;
+                animation-iteration-count: 1 !important;
+                transition-duration: 0.01ms !important;
+            }
+        }
+        
+        /* Alto contraste */
+        @media (prefers-contrast: high) {
+            #pin-input {
+                border-width: 3px;
+            }
+            
+            button {
+                border: 2px solid #000000;
+            }
+        }
+        
+        /* Modo oscuro compatible */
+        @media (prefers-color-scheme: dark) {
+            .bluetooth-instructions {
+                background: #1E293B;
+                border-color: #3B82F6;
+                color: #E2E8F0;
+            }
+            
+            .install-advice {
+                background: #1E3A8A;
+                color: #DBEAFE;
+            }
+            
+            .install-hints {
+                background: #78350F;
+                color: #FDE68A;
+            }
+        }
     </style>
 </head>
 <body>
+    <!-- INDICADOR DE ESTADO OFFLINE -->
+    <div id="offline-indicator" class="offline-indicator">
+        <span id="offline-text">✅ Aplicación lista para funcionar offline</span>
+    </div>
+    
+    <!-- NOTIFICACIÓN FLOTANTE -->
+    <div id="floating-notification" class="floating-notification"></div>
+    
     <div id="app-container">
         <!-- PANTALLA DE LOGIN -->
         <section id="login-screen" class="screen">
             <div class="logo-area">
                 <div class="circle-logo">
-                    <img src="icon-192.png" alt="Icono" id="app-icon">
+                    <img src="icon-192.png" alt="Icono Campanas Parroquiales" id="app-icon" loading="eager">
                 </div>
                 <h1>Campanas Parroquiales</h1>
                 <p class="subtitle">Sistema de Control Universal</p>
+                <p class="subtitle" style="font-size: 0.9em; color: #666; margin-top: 5px;">
+                    📱 Instálela para usar 100% sin internet
+                </p>
             </div>
             
             <div class="login-card">
@@ -175,18 +327,33 @@
                        autocomplete="off"
                        autofocus
                        placeholder="____"
-                       oninput="validarPinInput(this)">
+                       oninput="validarPinInput(this)"
+                       aria-label="Ingrese el PIN de 4 dígitos">
                 
-                <button class="main-btn" onclick="verificarAcceso()">INGRESAR</button>
+                <button class="main-btn" onclick="verificarAcceso()" aria-label="Verificar PIN e ingresar">
+                    INGRESAR
+                </button>
+                
+                <!-- Indicador de estado -->
+                <div id="login-status" style="margin-top: 15px; font-size: 13px; color: #666; min-height: 18px;">
+                    <span id="status-text"></span>
+                    <span id="status-loading" class="loading" style="display: none;">🔄 Verificando recursos...</span>
+                </div>
             </div>
             
             <!-- CONSEJO DE INSTALACIÓN EN LOGIN -->
             <div class="install-advice" id="install-advice">
                 <p>📱 ¿Usa esta app frecuentemente?</p>
-                <button class="install-btn" id="install-login-button" style="margin: 0 auto 10px auto;">
-                    AGREGAR A PANTALLA INICIAL
+                <button class="install-btn" id="install-login-button" style="margin: 0 auto 10px auto;"
+                        aria-label="Instalar aplicación en pantalla de inicio">
+                    📲 INSTALAR APLICACIÓN
                 </button>
                 <div class="install-hints" id="install-hints">
+                    <span><strong>✅ Ventajas de instalar:</strong></span>
+                    <span>• Funciona 100% SIN INTERNET</span>
+                    <span>• Ícono en pantalla principal</span>
+                    <span>• Más rápido que navegador</span>
+                    <span style="margin-top: 8px;"><strong>📱 Cómo instalar:</strong></span>
                     <span><strong>Android Chrome:</strong> Menú → "Agregar a pantalla de inicio"</span>
                     <span><strong>iPhone Safari:</strong> Compartir → "Agregar a inicio"</span>
                 </div>
@@ -204,38 +371,79 @@
                     ⚠️ Después de parear una vez, se conectará automáticamente
                 </div>
             </div>
+            
+            <!-- VERIFICACIÓN DE RECURSOS OFFLINE -->
+            <div id="offline-check" style="text-align: center; margin-top: 20px;">
+                <button class="outline-btn" onclick="verificarRecursosOffline()" 
+                        style="padding: 12px; font-size: 14px;">
+                    🔍 VERIFICAR RECURSOS OFFLINE
+                </button>
+                <p style="font-size: 12px; color: #666; margin-top: 8px;">
+                    Asegúrese que todos los archivos estén descargados
+                </p>
+            </div>
         </section>
 
         <!-- PANTALLA PRINCIPAL -->
-      <section id="home-screen" class="screen hidden">
-    <!-- ICONO EN PANTALLA PRINCIPAL -->
-    <div class="logo-area" style="margin-top: 10px; margin-bottom: 10px;">
-        <div class="circle-logo" style="width: 80px; height: 80px; margin-bottom: 10px;">
-            <img src="icon-96.png" alt="Icono" class="home-icon">
-        </div>
-    </div>
-    
-    <div class="header-control">
-        <h2>🔔 CAMPANAS PARROQUIALES</h2>
-    </div>
-
-             <!-- BOTONES DE CONTROL -->
-            <div class="control-grid">
-                <button class="bell-btn" onclick="playAudio('campana1.mp3')">🔔 Primer Toque</button>
-                <button class="bell-btn" onclick="playAudio('campana2.mp3')">🔔 Segundo Toque</button>
-                <button class="bell-btn" onclick="playAudio('campana3.mp3')">🔔 Tercer Toque</button>
-                <button class="bell-btn emergency-btn" onclick="confirmarEmergencia()">⚠️ 🚨 EMERGENCIA</button>
-                <button class="stop-btn" onclick="detenerSonido()">⏹️ DETENER SONIDO</button>
+        <section id="home-screen" class="screen hidden">
+            <!-- ICONO EN PANTALLA PRINCIPAL -->
+            <div class="logo-area" style="margin-top: 10px; margin-bottom: 10px;">
+                <div class="circle-logo" style="width: 80px; height: 80px; margin-bottom: 10px;">
+                    <img src="icon-96.png" alt="Icono" class="home-icon" loading="eager">
+                </div>
+            </div>
+            
+            <div class="header-control">
+                <h2>🔔 CAMPANAS PARROQUIALES</h2>
+                <div id="connection-status" style="font-size: 13px; margin-top: 5px;">
+                    <span id="online-status">🌐 Conectado</span>
+                    <span id="offline-status" style="display: none;">📴 Funcionando offline</span>
+                </div>
             </div>
 
-            <!-- BOTÓN DE INSTALACIÓN PWA MEJORADO -->
+            <!-- BOTONES DE CONTROL -->
+            <div class="control-grid">
+                <button class="bell-btn" onclick="playAudio('campana1.mp3')" 
+                        aria-label="Reproducir primer toque de campana">
+                    🔔 Primer Toque
+                </button>
+                <button class="bell-btn" onclick="playAudio('campana2.mp3')"
+                        aria-label="Reproducir segundo toque de campana">
+                    🔔 Segundo Toque
+                </button>
+                <button class="bell-btn" onclick="playAudio('campana3.mp3')"
+                        aria-label="Reproducir tercer toque de campana">
+                    🔔 Tercer Toque
+                </button>
+                <button class="bell-btn emergency-btn" onclick="confirmarEmergencia()"
+                        aria-label="Activar alarma de emergencia">
+                    ⚠️ 🚨 EMERGENCIA
+                </button>
+                <button class="stop-btn" onclick="detenerSonido()"
+                        aria-label="Detener todos los sonidos">
+                    ⏹️ DETENER SONIDO
+                </button>
+            </div>
+
+            <!-- ESTADO DE LA APLICACIÓN -->
+            <div id="app-status" class="status-bar" style="margin: 20px 0; display: none;">
+                <div id="status-content"></div>
+            </div>
+
+            <!-- BOTÓN DE INSTALACIÓN PWA MEJORADO (solo se muestra si no está instalado) -->
             <div id="install-container" class="install-box">
                 <div class="install-advice">
-                    <p>💡 Para acceso rápido:</p>
-                    <button class="install-btn" id="install-button">
-                        📱 AGREGAR A PANTALLA INICIAL
+                    <p>💡 Para acceso rápido y funcionamiento offline:</p>
+                    <button class="install-btn" id="install-button"
+                            aria-label="Instalar aplicación para uso offline">
+                        📲 INSTALAR APLICACIÓN
                     </button>
                     <div class="install-hints">
+                        <span><strong>✅ Instale para:</strong></span>
+                        <span>• Usar SIN INTERNET</span>
+                        <span>• Acceso desde pantalla principal</span>
+                        <span>• Mejor rendimiento</span>
+                        <span style="margin-top: 8px;"><strong>📱 Instalar en:</strong></span>
                         <span><strong>Android:</strong> Menú Chrome → "Agregar a pantalla de inicio"</span>
                         <span><strong>iPhone:</strong> Compartir Safari → "Agregar a inicio"</span>
                     </div>
@@ -244,25 +452,29 @@
 
             <!-- NAVEGACIÓN INFERIOR -->
             <div class="bottom-nav">
-                <div class="nav-item" onclick="abrirAyuda()">
+                <div class="nav-item" onclick="abrirAyuda()" aria-label="Abrir ayuda e instrucciones">
                     <div class="circulo-jl-nav">JL</div>
                     <span>Ayuda</span>
                 </div>
                 
                 <!-- BOTÓN CONEXIÓN (AHORA INSTRUCCIONES) -->
-                <div class="nav-item" onclick="mostrarInstruccionesBluetooth()" id="bluetooth-help-btn">
+                <div class="nav-item" onclick="mostrarInstruccionesBluetooth()" 
+                     id="bluetooth-help-btn" aria-label="Instrucciones de conexión Bluetooth">
                     <div class="circulo-bt-nav">📡</div>
                     <span id="bluetooth-help-text">Conectar</span>
                 </div>
                 
-                <div class="nav-item admin-pill" onclick="intentarConfiguracion()">⚙️ Admin</div>
+                <div class="nav-item admin-pill" onclick="intentarConfiguracion()"
+                     aria-label="Configuración administrativa">
+                    ⚙️ Admin
+                </div>
             </div>
         </section>
 
         <!-- PANTALLA DE CONFIGURACIÓN SIMPLIFICADA -->
         <section id="config-screen" class="screen hidden">
             <div class="config-header">
-                <button onclick="irAHome()">← Volver</button>
+                <button onclick="irAHome()" aria-label="Volver a pantalla principal">← Volver</button>
                 <h2>Configuración</h2>
             </div>
             
@@ -270,15 +482,58 @@
             <div class="config-card">
                 <h3>🔐 Gestión de Seguridad</h3>
                 <p>Cambio de PIN global (anti-robo). Requiere conexión a internet.</p>
-                <button class="main-btn" onclick="cambiarPinApp()">🔄 CAMBIAR PIN GLOBAL</button>
+                <button class="main-btn" onclick="cambiarPinApp()"
+                        aria-label="Cambiar PIN de la aplicación">
+                    🔄 CAMBIAR PIN GLOBAL
+                </button>
                 <p class="config-note" style="font-size: 12px; color: #666; margin-top: 10px;">
                     El PIN se sincroniza cuando el dispositivo tiene internet
                 </p>
+                
+                <!-- Información del estado offline -->
+                <div style="margin-top: 20px; padding: 15px; background: #F3F4F6; border-radius: 10px;">
+                    <h4 style="margin: 0 0 10px 0; font-size: 16px;">📊 Estado de la Aplicación</h4>
+                    <div id="config-status">
+                        <p style="margin: 5px 0; font-size: 13px;">
+                            <strong>Service Worker:</strong> 
+                            <span id="sw-status">Verificando...</span>
+                        </p>
+                        <p style="margin: 5px 0; font-size: 13px;">
+                            <strong>Recursos offline:</strong> 
+                            <span id="cache-status">Verificando...</span>
+                        </p>
+                        <p style="margin: 5px 0; font-size: 13px;">
+                            <strong>Última actualización:</strong> 
+                            <span id="last-update">Verificando...</span>
+                        </p>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- ACCIONES DE MANTENIMIENTO -->
+            <div class="config-card" style="margin-top: 20px;">
+                <h3>🛠️ Mantenimiento</h3>
+                <p>Acciones para mantener la aplicación funcionando correctamente.</p>
+                
+                <button class="outline-btn" onclick="recachearRecursosFaltantes()"
+                        style="margin-bottom: 10px;">
+                    🔄 RECARGAR RECURSOS
+                </button>
+                
+                <button class="outline-btn" onclick="forzarActualizacionSW()"
+                        style="margin-bottom: 10px;">
+                    ⚡ FORZAR ACTUALIZACIÓN
+                </button>
+                
+                <button class="outline-btn" onclick="cerrarSesion()">
+                    👋 CERRAR SESIÓN
+                </button>
             </div>
             
             <!-- BOTÓN PARA VOLVER -->
             <div style="text-align: center; margin-top: 20px; padding: 0 20px;">
-                <button class="outline-btn" onclick="irAHome()" style="width: 100%;">
+                <button class="outline-btn" onclick="irAHome()" style="width: 100%;"
+                        aria-label="Volver a la pantalla principal">
                     🏠 VOLVER A CAMPANAS
                 </button>
             </div>
@@ -290,30 +545,226 @@
                 <div class="drag-handle"></div>
                 <h3 class="modal-title">DESCARGAR APLICACIÓN</h3>
                 <div class="qr-box">
-                    <img src="qr_descarga.png" alt="QR de descarga" class="qr-img">
+                    <img src="qr_descarga.png" alt="QR de descarga de la aplicación Campanas Parroquiales" 
+                         class="qr-img" loading="lazy" onerror="this.src='icon-192.png'">
                 </div>
                 <p class="modal-text">Escanea para instalar la aplicación</p>
-                <button class="main-btn" onclick="abrirPDF()">📄 INSTRUCCIONES PDF</button>
+                <button class="main-btn" onclick="abrirPDF()"
+                        aria-label="Abrir instrucciones en PDF">
+                    📄 INSTRUCCIONES PDF
+                </button>
                 <p class="contact-info">Contacto: 829-325-4348</p>
-                <button class="outline-btn" onclick="cerrarAyuda()">CERRAR</button>
+                <button class="outline-btn" onclick="cerrarAyuda()"
+                        aria-label="Cerrar ventana de ayuda">
+                    CERRAR
+                </button>
             </div>
         </div>
     </div>
-    
-<!-- SERVICIO SIMPLIFICADO - SIN ERRORES -->
-<script>
-    // Solo esto: verificar que el navegador soporte PWA básica
-    console.log('Aplicación Campanas Parroquiales cargada');
-    
-    // Si no existe sw.js, no intentar cargarlo
-    if ('serviceWorker' in navigator) {
-        // Intentar cargar, pero si falla, continuar igual
-        navigator.serviceWorker.register('sw.js')
-            .then(() => console.log('Service Worker registrado'))
-            .catch(() => console.log('Sin Service Worker - funciona igual'));
-    }
-</script>
 
-<script src="app.js"></script>
+    <!-- SCRIPTS CRÍTICOS - Optimizados para PWA -->
+    <script>
+        // Script de inicialización mejorado para PWA offline
+        (function() {
+            console.log('🔔 Campanas Parroquiales - Iniciando en modo PWA');
+            
+            // Detectar si estamos en modo standalone (ya instalado)
+            const isStandalone = window.matchMedia('(display-mode: standalone)').matches || 
+                                window.navigator.standalone === true;
+            
+            // Actualizar título si está instalado
+            if (isStandalone) {
+                document.title = 'Campanas (Offline)';
+                console.log('📱 Modo standalone detectado - Aplicación instalada');
+                
+                // Ocultar elementos de instalación
+                setTimeout(() => {
+                    const installElements = document.querySelectorAll('.install-advice, #install-container');
+                    installElements.forEach(el => {
+                        if (el) el.style.display = 'none';
+                    });
+                }, 100);
+            }
+            
+            // Verificar conexión inicial
+            function updateOnlineStatus() {
+                const online = navigator.onLine;
+                const indicator = document.getElementById('offline-indicator');
+                const offlineText = document.getElementById('offline-text');
+                const onlineStatus = document.getElementById('online-status');
+                const offlineStatus = document.getElementById('offline-status');
+                
+                if (indicator && offlineText) {
+                    if (online) {
+                        indicator.classList.remove('offline');
+                        offlineText.textContent = '✅ Conectado a internet';
+                    } else {
+                        indicator.classList.add('offline');
+                        offlineText.textContent = '📴 Funcionando en modo offline';
+                    }
+                    
+                    // Mostrar indicador brevemente
+                    indicator.classList.add('show');
+                    setTimeout(() => {
+                        indicator.classList.remove('show');
+                    }, 3000);
+                }
+                
+                // Actualizar en pantalla principal
+                if (onlineStatus && offlineStatus) {
+                    if (online) {
+                        onlineStatus.style.display = 'inline';
+                        offlineStatus.style.display = 'none';
+                    } else {
+                        onlineStatus.style.display = 'none';
+                        offlineStatus.style.display = 'inline';
+                    }
+                }
+            }
+            
+            // Inicializar estado de conexión
+            updateOnlineStatus();
+            window.addEventListener('online', updateOnlineStatus);
+            window.addEventListener('offline', updateOnlineStatus);
+            
+            // Registrar Service Worker para PWA offline
+            if ('serviceWorker' in navigator) {
+                // Esperar a que la página cargue completamente
+                window.addEventListener('load', function() {
+                    // Registrar con estrategia agresiva
+                    navigator.serviceWorker.register('sw.js', {
+                        scope: './',
+                        updateViaCache: 'none'
+                    })
+                    .then(function(registration) {
+                        console.log('✅ Service Worker registrado exitosamente:', registration.scope);
+                        
+                        // Forzar actualización si hay conexión
+                        if (navigator.onLine) {
+                            registration.update();
+                        }
+                        
+                        // Verificar si hay una nueva versión esperando
+                        if (registration.waiting) {
+                            console.log('🔄 Nueva versión del Service Worker esperando');
+                            mostrarNotificacion('Nueva versión disponible. Recargue para actualizar.');
+                        }
+                        
+                        // Escuchar actualizaciones
+                        registration.addEventListener('updatefound', function() {
+                            console.log('🔄 Nueva versión del Service Worker encontrada');
+                            const newWorker = registration.installing;
+                            
+                            newWorker.addEventListener('statechange', function() {
+                                if (this.state === 'installed' && navigator.serviceWorker.controller) {
+                                    console.log('✨ Nueva versión instalada - Lista para activar');
+                                    mostrarNotificacion('Actualización lista. Recargue para aplicar cambios.');
+                                }
+                            });
+                        });
+                    })
+                    .catch(function(error) {
+                        console.error('❌ Error registrando Service Worker:', error);
+                    });
+                });
+            } else {
+                console.warn('⚠️ Service Worker no soportado - La aplicación funcionará en modo online');
+            }
+            
+            // Función para mostrar notificaciones flotantes
+            window.mostrarNotificacion = function(mensaje, duracion = 3000) {
+                const notification = document.getElementById('floating-notification');
+                if (notification) {
+                    notification.textContent = mensaje;
+                    notification.classList.add('show');
+                    
+                    setTimeout(() => {
+                        notification.classList.remove('show');
+                    }, duracion);
+                } else {
+                    console.log('💬 ' + mensaje);
+                }
+            };
+            
+            // Función para verificar estado del Service Worker
+            window.verificarEstadoSW = function() {
+                if ('serviceWorker' in navigator) {
+                    navigator.serviceWorker.getRegistration().then(registration => {
+                        if (registration) {
+                            const swStatus = document.getElementById('sw-status');
+                            if (swStatus) {
+                                swStatus.textContent = '✅ Activo';
+                                swStatus.style.color = '#10B981';
+                            }
+                            
+                            // Verificar cache
+                            if ('caches' in window) {
+                                caches.open('campanas-pwav1').then(cache => {
+                                    cache.keys().then(keys => {
+                                        const cacheStatus = document.getElementById('cache-status');
+                                        if (cacheStatus) {
+                                            const total = keys.length;
+                                            cacheStatus.textContent = `✅ ${total} archivos cacheados`;
+                                            cacheStatus.style.color = '#10B981';
+                                        }
+                                    });
+                                });
+                            }
+                        } else {
+                            const swStatus = document.getElementById('sw-status');
+                            if (swStatus) {
+                                swStatus.textContent = '❌ Inactivo';
+                                swStatus.style.color = '#EF4444';
+                            }
+                        }
+                    });
+                }
+            };
+            
+            // Función para recachear recursos
+            window.recachearRecursosFaltantes = function() {
+                if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
+                    navigator.serviceWorker.controller.postMessage({
+                        type: 'FORZAR_ACTUALIZACION'
+                    });
+                    mostrarNotificacion('🔄 Recacheando recursos...');
+                    
+                    setTimeout(() => {
+                        location.reload();
+                    }, 1500);
+                } else {
+                    mostrarNotificacion('⚠️ Service Worker no disponible');
+                }
+            };
+            
+            // Función para forzar actualización
+            window.forzarActualizacionSW = function() {
+                if ('serviceWorker' in navigator) {
+                    navigator.serviceWorker.getRegistration().then(registration => {
+                        if (registration) {
+                            registration.update();
+                            mostrarNotificacion('🔄 Buscando actualizaciones...');
+                            
+                            setTimeout(() => {
+                                location.reload();
+                            }, 2000);
+                        }
+                    });
+                }
+            };
+            
+            // Mostrar notificación de bienvenida
+            setTimeout(() => {
+                if (isStandalone) {
+                    mostrarNotificacion('✅ Aplicación instalada - Lista para uso offline');
+                }
+            }, 1500);
+            
+            console.log('✅ Sistema de inicialización PWA cargado');
+        })();
+    </script>
+    
+    <!-- Script principal -->
+    <script src="app.js" defer></script>
 </body>
 </html>
