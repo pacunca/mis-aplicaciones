@@ -17,6 +17,17 @@
     --warning-yellow: #FFF3CD;
 }
 
+/* POLYFILL PARA FLEXBOX GAP (para IE11/navegadores antiguos) */
+@supports not (gap: 10px) {
+  .control-grid {
+    margin: -7.5px;
+  }
+  
+  .control-grid > * {
+    margin: 7.5px;
+  }
+}
+
 /* ==========================================
    RESET Y BASE RESPONSIVA
    ========================================== */
@@ -28,12 +39,14 @@
 body {
     margin: 0;
     padding: 0;
+    background-color: #FAF7F0; /* Fallback para navegadores sin variables CSS */
     background-color: var(--bg);
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen-Sans, Ubuntu, Cantarell, sans-serif;
     display: flex;
     justify-content: center;
     align-items: flex-start;
     min-height: 100vh;
+    min-height: 100dvh; /* Nueva unidad estándar */
     overflow-x: hidden;
 }
 
@@ -41,7 +54,9 @@ body {
     width: 100%;
     max-width: 480px;
     min-height: 100vh;
+    min-height: 100dvh; /* Nueva unidad estándar */
     position: relative;
+    background: #FAF7F0; /* Fallback para navegadores sin variables CSS */
     background: var(--bg);
     box-shadow: 0 0 20px rgba(0, 0, 0, 0.05);
 }
@@ -52,6 +67,7 @@ body {
 .screen {
     padding: 20px;
     min-height: 100vh;
+    min-height: 100dvh; /* Nueva unidad estándar */
     display: flex;
     flex-direction: column;
     overflow-y: auto;
@@ -81,14 +97,17 @@ body {
 .circle-logo {
     width: 140px;
     height: 140px;
+    background: #5D4E37; /* Fallback para navegadores sin variables CSS */
     background: var(--primary);  /* Fondo marrón */
     border-radius: 50%;
     margin: 0 auto 20px auto;
+    border: 3px solid #5D4E37; /* Fallback para navegadores sin variables CSS */
     border: 3px solid var(--primary);
     overflow: hidden;
     display: flex;
     justify-content: center;
     align-items: center;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1); /* Fallback para navegadores sin variables CSS */
     box-shadow: var(--shadow);
     position: relative;
 }
@@ -104,6 +123,7 @@ body {
 }
 
 .logo-area h1 {
+    color: #5D4E37; /* Fallback para navegadores sin variables CSS */
     color: var(--primary);
     margin: 0;
     font-size: 1.8em;
@@ -111,6 +131,7 @@ body {
 }
 
 .subtitle {
+    color: #8B7355; /* Fallback para navegadores sin variables CSS */
     color: var(--primary-light);
     margin: 5px 0 0 0;
     font-size: 1em;
@@ -119,10 +140,14 @@ body {
 
 .login-card,
 .config-card {
+    background: #FFFFFF; /* Fallback para navegadores sin variables CSS */
     background: var(--white);
     padding: 25px;
+    border-radius: 18px; /* Fallback para navegadores sin variables CSS */
     border-radius: var(--radius);
+    border: 1.5px solid #8B7355; /* Fallback para navegadores sin variables CSS */
     border: 1.5px solid var(--primary-light);
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1); /* Fallback para navegadores sin variables CSS */
     box-shadow: var(--shadow);
     text-align: center;
     flex-shrink: 0;
@@ -136,12 +161,16 @@ body {
     text-align: center;
     margin: 20px 0;
     border-radius: 15px;
+    border: 2px solid #8B7355; /* Fallback para navegadores sin variables CSS */
     border: 2px solid var(--primary-light);
+    background: #FFFFFF; /* Fallback para navegadores sin variables CSS */
     background: var(--white);
+    color: #5D4E37; /* Fallback para navegadores sin variables CSS */
     color: var(--primary);
     letter-spacing: 12px;
     box-sizing: border-box;
     font-weight: bold;
+    caret-color: #5D4E37; /* Fallback para navegadores sin variables CSS */
     caret-color: var(--primary);
     outline: none;
     -webkit-appearance: none;
@@ -156,11 +185,13 @@ body {
 }
 
 #pin-input:focus {
+    border-color: #10B981; /* Fallback para navegadores sin variables CSS */
     border-color: var(--success);
     box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.2);
 }
 
 #pin-input.error {
+    border-color: #EF4444; /* Fallback para navegadores sin variables CSS */
     border-color: var(--danger);
     box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.2);
 }
@@ -171,6 +202,7 @@ body {
 .header-control {
     text-align: center;
     margin: 15px 0 20px 0;
+    color: #5D4E37; /* Fallback para navegadores sin variables CSS */
     color: var(--primary);
     flex-shrink: 0;
 }
@@ -183,6 +215,7 @@ body {
 
 .status-bar {
     padding: 14px 16px;
+    background: #FFF3CD; /* Fallback para navegadores sin variables CSS */
     background: var(--warning-yellow);
     color: #856404;
     border-radius: 12px;
@@ -199,6 +232,7 @@ body {
    ========================================== */
 .bluetooth-instructions {
     background: #E8F4FD;
+    border: 2px solid #4A90E2; /* Fallback para navegadores sin variables CSS */
     border: 2px solid var(--info-blue);
     border-radius: 12px;
     padding: 15px;
@@ -210,6 +244,7 @@ body {
 }
 
 .bluetooth-instructions h4 {
+    color: #4A90E2; /* Fallback para navegadores sin variables CSS */
     color: var(--info-blue);
     margin-top: 0;
     margin-bottom: 10px;
@@ -230,12 +265,14 @@ body {
     content: "•";
     position: absolute;
     left: 5px;
+    color: #4A90E2; /* Fallback para navegadores sin variables CSS */
     color: var(--info-blue);
     font-weight: bold;
     font-size: 16px;
 }
 
 .bluetooth-warning {
+    background: #FFF3CD; /* Fallback para navegadores sin variables CSS */
     background: var(--warning-yellow);
     border: 1px solid #FFEAA7;
     border-radius: 8px;
@@ -286,6 +323,13 @@ body {
 /* ==========================================
    GRID DE CONTROL DE CAMPANAS (RESPONSIVO)
    ========================================== */
+@supports not (display: grid) {
+  .control-grid {
+    display: flex;
+    flex-wrap: wrap;
+  }
+}
+
 .control-grid {
     display: grid;
     grid-template-columns: 1fr;
@@ -314,11 +358,13 @@ body {
 .install-btn {
     width: 100%;
     padding: 22px 10px;
+    border-radius: 18px; /* Fallback para navegadores sin variables CSS */
     border-radius: var(--radius);
     font-size: 18px;
     font-weight: 700;
     border: none;
     cursor: pointer;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1); /* Fallback para navegadores sin variables CSS */
     box-shadow: var(--shadow);
     display: flex;
     align-items: center;
@@ -338,7 +384,9 @@ body {
 
 .main-btn,
 .bell-btn {
+    background: linear-gradient(180deg, #8B7355 0%, #5D4E37 100%); /* Fallback para navegadores sin variables CSS */
     background: linear-gradient(180deg, var(--primary-light) 0%, var(--primary) 100%);
+    color: #FFFFFF; /* Fallback para navegadores sin variables CSS */
     color: var(--white);
 }
 
@@ -348,13 +396,17 @@ body {
 }
 
 .emergency-btn {
+    background: linear-gradient(180deg, #DC2626 0%, #B91C1C 100%) !important; /* Fallback para navegadores sin variables CSS */
     background: linear-gradient(180deg, var(--emergency) 0%, #B91C1C 100%) !important;
+    color: #FFFFFF !important; /* Fallback para navegadores sin variables CSS */
     color: var(--white) !important;
     font-weight: 800;
 }
 
 .stop-btn {
+    background: #F59E0B !important; /* Fallback para navegadores sin variables CSS */
     background: var(--stop) !important;
+    color: #5D4E37 !important; /* Fallback para navegadores sin variables CSS */
     color: var(--primary) !important;
     font-weight: 800;
 }
@@ -384,12 +436,14 @@ body {
     transform: translateX(-50%);
     width: calc(100% - 40px);
     max-width: 440px;
+    background: #FFFFFF; /* Fallback para navegadores sin variables CSS */
     background: var(--white);
     display: flex;
     justify-content: space-between;
     align-items: center;
     padding: 12px 15px;
     border-radius: 25px;
+    border: 1.5px solid #D7D0C8; /* Fallback para navegadores sin variables CSS */
     border: 1.5px solid var(--gray-border);
     box-shadow: 0 -5px 20px rgba(0, 0, 0, 0.1);
     z-index: 1000;
@@ -401,6 +455,7 @@ body {
     display: flex;
     flex-direction: column;
     align-items: center;
+    color: #5D4E37; /* Fallback para navegadores sin variables CSS */
     color: var(--primary);
     font-size: 13px;
     font-weight: 600;
@@ -418,6 +473,7 @@ body {
     width: 50px;
     height: 50px;
     border-radius: 50%;
+    background-color: #FFFFFF; /* Fallback para navegadores sin variables CSS */
     background-color: var(--white);
     border: 3px solid #000000;
     display: flex;
@@ -434,10 +490,12 @@ body {
     width: 50px;
     height: 50px;
     border-radius: 50%;
+    background: linear-gradient(180deg, #8B7355 0%, #5D4E37 100%); /* Fallback para navegadores sin variables CSS */
     background: linear-gradient(180deg, var(--primary-light) 0%, var(--primary) 100%);
     display: flex;
     justify-content: center;
     align-items: center;
+    color: #FFFFFF; /* Fallback para navegadores sin variables CSS */
     color: var(--white);
     font-size: 1.5em;
     margin-bottom: 4px;
@@ -448,6 +506,7 @@ body {
 /* Botón Admin */
 .admin-pill {
     background: #444;
+    color: #FFFFFF !important; /* Fallback para navegadores sin variables CSS */
     color: var(--white) !important;
     border-radius: 12px;
     padding: 10px 15px !important;
@@ -473,7 +532,9 @@ body {
 
 .config-header button {
     background: none;
+    border: 2px solid #8B7355; /* Fallback para navegadores sin variables CSS */
     border: 2px solid var(--primary-light);
+    color: #5D4E37; /* Fallback para navegadores sin variables CSS */
     color: var(--primary);
     padding: 10px 15px;
     border-radius: 10px;
@@ -483,12 +544,14 @@ body {
 }
 
 .config-header button:active {
+    background: #8B7355; /* Fallback para navegadores sin variables CSS */
     background: var(--primary-light);
     color: white;
 }
 
 .config-header h2 {
     margin: 0;
+    color: #5D4E37; /* Fallback para navegadores sin variables CSS */
     color: var(--primary);
     font-size: 1.5em;
 }
@@ -501,9 +564,12 @@ body {
 
 .outline-btn {
     background: transparent;
+    border: 2px solid #8B7355; /* Fallback para navegadores sin variables CSS */
     border: 2px solid var(--primary-light);
+    color: #5D4E37; /* Fallback para navegadores sin variables CSS */
     color: var(--primary);
     padding: 18px;
+    border-radius: 18px; /* Fallback para navegadores sin variables CSS */
     border-radius: var(--radius);
     font-weight: 700;
     cursor: pointer;
@@ -513,6 +579,7 @@ body {
 }
 
 .outline-btn:active {
+    background: #8B7355; /* Fallback para navegadores sin variables CSS */
     background: var(--primary-light);
     color: white;
 }
@@ -535,19 +602,14 @@ body {
 }
 
 .modal-content {
+    background: #FFFFFF; /* Fallback para navegadores sin variables CSS */
     background: var(--white);
     width: 100%;
     max-width: 400px;
     padding: 30px 25px;
     border-radius: 25px;
     text-align: center;
-    animation: modalFade 0.3s ease-out;
     box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
-}
-
-@keyframes modalFade {
-    from { opacity: 0; transform: scale(0.9); }
-    to { opacity: 1; transform: scale(1); }
 }
 
 .drag-handle {
@@ -559,6 +621,7 @@ body {
 }
 
 .modal-title {
+    color: #5D4E37; /* Fallback para navegadores sin variables CSS */
     color: var(--primary);
     margin: 0 0 25px 0;
     font-size: 1.5em;
@@ -570,6 +633,7 @@ body {
     padding: 15px;
     background: white;
     border-radius: 15px;
+    border: 2px solid #D7D0C8; /* Fallback para navegadores sin variables CSS */
     border: 2px solid var(--gray-border);
     display: inline-block;
     box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
@@ -594,6 +658,7 @@ body {
     padding: 12px;
     border-radius: 10px;
     margin: 20px 0;
+    color: #5D4E37; /* Fallback para navegadores sin variables CSS */
     color: var(--primary);
     font-weight: 600;
     font-size: 15px;
@@ -611,11 +676,6 @@ body {
    ========================================== */
 .hidden {
     display: none !important;
-}
-
-@keyframes fadeIn {
-    from { opacity: 0; }
-    to { opacity: 1; }
 }
 
 /* ==========================================
@@ -781,11 +841,13 @@ input, textarea, select {
    ========================================== */
 @supports (-webkit-touch-callout: none) {
     .screen {
-        min-height: -webkit-fill-available;
+        min-height: 100vh;
+        min-height: 100dvh; /* Nueva unidad estándar */
     }
     
     #app-container {
-        min-height: -webkit-fill-available;
+        min-height: 100vh;
+        min-height: 100dvh; /* Nueva unidad estándar */
     }
     
     /* Mejorar apariencia en iOS */
@@ -805,7 +867,9 @@ input, textarea, select {
 #pin-input {
     font-size: 32px !important;
     font-weight: bold !important;
+    color: #5D4E37 !important; /* Fallback para navegadores sin variables CSS */
     color: var(--primary) !important;
+    background-color: #FFFFFF !important; /* Fallback para navegadores sin variables CSS */
     background-color: var(--white) !important;
 }
 
@@ -825,8 +889,6 @@ input, textarea, select {
 /* Tamaño de texto más grande si el sistema lo pide */
 @media (prefers-reduced-motion: reduce) {
     * {
-        animation-duration: 0.01ms !important;
-        animation-iteration-count: 1 !important;
         transition-duration: 0.01ms !important;
     }
 }
@@ -904,24 +966,6 @@ body {
     }
 }
 
-/* 4. ESTILOS PARA INSTALACIÓN PWA */
-/* Indicador de que la app puede instalarse */
-.install-promotion {
-    animation: pulse-install 2s infinite;
-    border-width: 3px !important;
-}
-
-@keyframes pulse-install {
-    0%, 100% { 
-        border-color: #3B82F6;
-        box-shadow: 0 0 0 rgba(59, 130, 246, 0.4);
-    }
-    50% { 
-        border-color: #60A5FA;
-        box-shadow: 0 0 20px rgba(59, 130, 246, 0.6);
-    }
-}
-
 /* 5. ESTADOS DE CONEXIÓN VISUALES */
 .status-online {
     background: linear-gradient(90deg, #10B981 0%, #059669 100%) !important;
@@ -962,7 +1006,7 @@ body {
         --bg: #1F2937;
         --white: #374151;
         --gray-border: #4B5563;
-        --primary: #D1D5DB;
+        --primary: #E5E7EB; /* Más claro para mejor contraste */
         --primary-light: #9CA3AF;
     }
     
@@ -971,19 +1015,24 @@ body {
     }
     
     #app-container {
+        background: #1F2937; /* Fallback para navegadores sin variables CSS */
         background: var(--bg);
         box-shadow: 0 0 20px rgba(0, 0, 0, 0.3);
     }
     
     .login-card,
     .config-card {
+        background: #374151; /* Fallback para navegadores sin variables CSS */
         background: var(--white);
+        border-color: #4B5563; /* Fallback para navegadores sin variables CSS */
         border-color: var(--gray-border);
     }
     
     #pin-input {
         background: #111827;
+        color: #E5E7EB; /* Fallback para navegadores sin variables CSS */
         color: var(--primary);
+        border-color: #4B5563; /* Fallback para navegadores sin variables CSS */
         border-color: var(--gray-border);
     }
     
@@ -1006,26 +1055,6 @@ body {
     .install-hints {
         background: #78350F;
         color: #FDE68A;
-    }
-}
-
-/* 8. ANIMACIONES SUAVES PARA MEJOR UX */
-.fade-in {
-    animation: fadeIn 0.5s ease-out;
-}
-
-.slide-up {
-    animation: slideUp 0.3s ease-out;
-}
-
-@keyframes slideUp {
-    from {
-        opacity: 0;
-        transform: translateY(20px);
-    }
-    to {
-        opacity: 1;
-        transform: translateY(0);
     }
 }
 
@@ -1099,36 +1128,7 @@ body {
     border: 0;
 }
 
-/* 12. ESTILOS PARA BATERÍA BAJA (FUTURO) */
-@media (max-resolution: 1dppx) {
-    /* Estilos para pantallas de baja resolución */
-    .control-grid {
-        gap: 10px;
-    }
-    
-    .bell-btn, .stop-btn {
-        padding: 15px 10px;
-    }
-}
-
 /* 13. POLYFILL VISUAL PARA FLEXBOX GAP (IE11) */
-@supports not (gap: 10px) {
-    .control-grid {
-        margin: -7.5px;
-    }
-    
-    .control-grid > * {
-        margin: 7.5px;
-    }
-    
-    .bottom-nav {
-        padding: 12px 5px;
-    }
-    
-    .nav-item {
-        margin: 0 5px;
-    }
-}
 
 /* 14. MEJORAS PARA ALTA DENSIDAD DE PIXELES */
 @media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
@@ -1152,6 +1152,7 @@ body {
     left: 0;
     width: 100%;
     height: 100%;
+    background: #5D4E37; /* Fallback para navegadores sin variables CSS */
     background: var(--primary);
     display: flex;
     justify-content: center;
@@ -1163,12 +1164,6 @@ body {
 #splash-screen.hidden {
     opacity: 0;
     pointer-events: none;
-}
-
-.splash-logo {
-    width: 100px;
-    height: 100px;
-    animation: pulse 1.5s ease-in-out infinite;
 }
 
 /* 16. ESTILOS PARA WEB COMPONENTS (FUTURO) */
@@ -1192,20 +1187,6 @@ body {
     * {
         background-image: none !important;
     }
-}
-
-/* 18. ESTILOS PARA CONTENIDO DINÁMICO */
-.content-placeholder {
-    background: linear-gradient(90deg, #F3F4F6 25%, #E5E7EB 50%, #F3F4F6 75%);
-    background-size: 200% 100%;
-    animation: loading 1.5s infinite;
-    border-radius: var(--radius);
-    min-height: 100px;
-}
-
-@keyframes loading {
-    0% { background-position: 200% 0; }
-    100% { background-position: -200% 0; }
 }
 
 /* 19. ESTILOS PARA GESTOS TÁCTILES MEJORADOS */
