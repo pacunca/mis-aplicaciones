@@ -1,4 +1,56 @@
 // ==========================================
+// SOLUCIÓN PARA REINICIOS INFINITOS
+// ==========================================
+function solucionarReiniciosInfinitos() {
+  // 1. Verificar si hay un SW atascado
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.getRegistrations().then(registrations => {
+      if (registrations.length > 0) {
+        console.log('🔧 Registros SW encontrados:', registrations.length);
+        
+        // 2. Forzar actualización del SW
+        registrations.forEach(registration => {
+          registration.update();
+          console.log('🔄 SW forzado a actualizar');
+        });
+        
+        // 3. Si persiste el problema, desregistrar y recargar
+        setTimeout(() => {
+          if (performance.navigation.type === performance.navigation.TYPE_RELOAD) {
+            console.log('⚠️ Posible bucle detectado - Limpiando SW');
+            registrations.forEach(registration => {
+              registration.unregister();
+            });
+            
+            // Limpiar cache manualmente
+            if ('caches' in window) {
+              caches.keys().then(cacheNames => {
+                cacheNames.forEach(cacheName => {
+                  caches.delete(cacheName);
+                });
+              });
+            }
+            
+            // Recargar después de limpiar
+            setTimeout(() => {
+              window.location.reload();
+            }, 1000);
+          }
+        }, 2000);
+      }
+    });
+  }
+}
+
+// Llamar esta función al inicio
+document.addEventListener('DOMContentLoaded', function() {
+  // ... tu código existente ...
+  
+  // Agregar esto:
+  setTimeout(solucionarReiniciosInfinitos, 1000);
+});
+
+// ==========================================
 // CONFIGURACIÓN DE SEGURIDAD Y ESTADO
 // ==========================================
 let PIN_APP = "1234";               // PIN inicial por defecto
