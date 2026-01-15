@@ -1,61 +1,12 @@
 // ==========================================
-// SOLUCIÓN PARA REINICIOS INFINITOS
-// ==========================================
-function solucionarReiniciosInfinitos() {
-  // 1. Verificar si hay un SW atascado
-  if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.getRegistrations().then(registrations => {
-      if (registrations.length > 0) {
-        console.log('🔧 Registros SW encontrados:', registrations.length);
-        
-        // 2. Forzar actualización del SW
-        registrations.forEach(registration => {
-          registration.update();
-          console.log('🔄 SW forzado a actualizar');
-        });
-        
-        // 3. Si persiste el problema, desregistrar y recargar
-        setTimeout(() => {
-          if (performance.navigation.type === performance.navigation.TYPE_RELOAD) {
-            console.log('⚠️ Posible bucle detectado - Limpiando SW');
-            registrations.forEach(registration => {
-              registration.unregister();
-            });
-            
-            // Limpiar cache manualmente
-            if ('caches' in window) {
-              caches.keys().then(cacheNames => {
-                cacheNames.forEach(cacheName => {
-                  caches.delete(cacheName);
-                });
-              });
-            }
-            
-            // Recargar después de limpiar
-            setTimeout(() => {
-              window.location.reload();
-            }, 1000);
-          }
-        }, 2000);
-      }
-    });
-  }
-}
-
-// Llamar esta función al inicio
-document.addEventListener('DOMContentLoaded', function() {
-  // ... tu código existente ...
-  
-  // Agregar esto:
-  setTimeout(solucionarReiniciosInfinitos, 1000);
-});
-
-// ==========================================
 // CONFIGURACIÓN DE SEGURIDAD Y ESTADO
 // ==========================================
 let PIN_APP = "1234";               // PIN inicial por defecto
 const CLAVE_MAESTRA = "santamaria"; // Clave solo para ADMIN
-const URL_PIN_REMOTO = "https://raw.githubusercontent.com/pacunca/mis-aplicaciones/main/pin-actual.txt";
+const URLS_PIN_REMOTO = [
+    "https://raw.githubusercontent.com/pacunca/mis-aplicaciones/main/pin-actual.txt",
+    "https://tudominio.com/pin-actual.txt", // TU PROPIO DOMINIO SI TIENES
+];
 const URL_PDF_INSTRUCCIONES = "https://pacunca.github.io/mis-aplicaciones/instrucciones.pdf";
 
 let audioActual = null;             // Controla el sonido que suena
@@ -66,34 +17,207 @@ let sesionAdminActiva = false;      // Controlar sesión admin activa
 let servicioWorkerActivo = false;   // Estado del Service Worker
 let recursosOfflineVerificados = false; // Si se verificaron los recursos
 
+// Versión de la aplicación para migración de datos
+const VERSION_APP = '1.0.0';
+
+// Modo desarrollo/producción
+const ES_DESARROLLO = window.location.hostname === 'localhost' || 
+                      window.location.hostname === '127.0.0.1';
+
+// Sistema de logging optimizado para producción
+const log = ES_DESARROLLO ? console.log : () => {};
+const warn = ES_DESARROLLO ? console.warn : () => {};
+const error = ES_DESARROLLO ? console.error : () => {};
+
+// ==========================================
+// BLUETOOTH - CONEXIÓN REAL
+// ==========================================
+async function conectarBluetooth() {
+    try {
+        // Verificar si Web Bluetooth está disponible
+        if (!navigator.bluetooth) {
+            mostrarNotificacion('⚠️ Bluetooth no disponible en este navegador');
+            
+            // Mostrar instrucciones alternativas
+            mostrarAlert(
+                'Bluetooth no soportado en este navegador.\n\n' +
+                'Usa Chrome/Edge en Android o Safari en iOS 13+.\n\n' +
+                'Alternativa: Configura Bluetooth manualmente en ' +
+                'Ajustes → Bluetooth y conéctate al dispositivo "Campanas".'
+            );
+            return false;
+        }
+        
+        log('📡 Solicitando dispositivo Bluetooth...');
+        
+        // Solicitar dispositivo Bluetooth
+        const device = await navigator.bluetooth.requestDevice({
+            filters: [{ name: 'Campanas' }],
+            optionalServices: ['battery_service', 'device_information']
+        });
+        
+        log('🔌 Conectando dispositivo Bluetooth:', device.name);
+        
+        // Conectar
+        const server = await device.gatt.connect();
+        
+        // Guardar referencia
+        window.bluetoothDevice = device;
+        window.bluetoothServer = server;
+        
+        // Configurar desconexión automática
+        device.addEventListener('gattserverdisconnected', () => {
+            log('📡 Dispositivo Bluetooth desconectado');
+            mostrarNotificacion('Dispositivo Bluetooth desconectado');
+        });
+        
+        mostrarNotificacion('✅ Bluetooth conectado a ' + device.name);
+        return true;
+    } catch (err) {
+        error('❌ Error Bluetooth:', err);
+        
+        if (err.name === 'NotFoundError') {
+            mostrarAlert(
+                'Dispositivo Bluetooth no encontrado.\n\n' +
+                'Asegúrate de:\n' +
+                '1. El módulo Bluetooth está ENCENDIDO\n' +
+                '2. Está cerca de tu celular\n' +
+                '3. Se llama "Campanas" o es visible\n' +
+                '4. Bluetooth está activado en tu celular'
+            );
+        } else if (err.name === 'SecurityError') {
+            mostrarAlert('Se necesita permiso para usar Bluetooth');
+        } else if (err.name === 'NetworkError') {
+            mostrarAlert('Error de red Bluetooth. Reintenta.');
+        } else {
+            mostrarAlert('Error Bluetooth: ' + err.message);
+        }
+        return false;
+    }
+}
+
+// Añadir a window para que HTML pueda llamarlo
+window.conectarBluetooth = conectarBluetooth;
+
+// Verificar soporte Web Bluetooth al inicio
+function verificarSoporteBluetooth() {
+    if (!navigator.bluetooth) {
+        log('⚠️ Web Bluetooth API no disponible');
+        
+        // Ocultar botón Bluetooth si no hay soporte
+        setTimeout(() => {
+            const btBtn = document.getElementById('bluetooth-help-btn');
+            if (btBtn) {
+                btBtn.style.display = 'none';
+                log('Botón Bluetooth ocultado por falta de soporte');
+            }
+        }, 1000);
+        
+        return false;
+    }
+    
+    log('✅ Web Bluetooth API disponible');
+    return true;
+}
+
+// ==========================================
+// MODALES PERSONALIZADOS (para reemplazar alert/prompt)
+// ==========================================
+function mostrarAlert(mensaje) {
+    return new Promise((resolve) => {
+        const modal = document.getElementById('custom-alert');
+        const mensajeElem = document.getElementById('alert-message');
+        
+        if (!modal || !mensajeElem) {
+            // Fallback a alert nativo si no hay modal
+            alert(mensaje);
+            resolve();
+            return;
+        }
+        
+        mensajeElem.textContent = mensaje;
+        modal.classList.remove('hidden');
+        
+        // Configurar botón OK
+        window.cerrarAlert = function() {
+            modal.classList.add('hidden');
+            resolve();
+        };
+    });
+}
+
+function mostrarPrompt(pregunta, valorPredeterminado = '') {
+    return new Promise((resolve) => {
+        const modal = document.getElementById('custom-prompt');
+        const mensajeElem = document.getElementById('prompt-message');
+        const inputElem = document.getElementById('prompt-input');
+        
+        if (!modal || !mensajeElem || !inputElem) {
+            // Fallback a prompt nativo si no hay modal
+            const resultado = prompt(pregunta, valorPredeterminado);
+            resolve(resultado);
+            return;
+        }
+        
+        mensajeElem.textContent = pregunta;
+        inputElem.value = valorPredeterminado;
+        inputElem.focus();
+        modal.classList.remove('hidden');
+        
+        // Configurar botones
+        window.confirmarPrompt = function() {
+            modal.classList.add('hidden');
+            resolve(inputElem.value);
+        };
+        
+        window.cancelarPrompt = function() {
+            modal.classList.add('hidden');
+            resolve(null);
+        };
+        
+        // Permitir Enter para confirmar
+        inputElem.onkeypress = function(e) {
+            if (e.key === 'Enter') {
+                confirmarPrompt();
+            }
+        };
+    });
+}
+
 // ==========================================
 // INICIALIZACIÓN DE LA APLICACIÓN
 // ==========================================
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('🔔 Campanas Parroquiales - Inicializando v2.0');
+    log('🔔 Campanas Parroquiales - Inicializando v2.0');
     
-    // 1. Detectar dispositivo Apple
+    // 1. Verificar y migrar datos si es necesario
+    verificarMigracionDatos();
+    
+    // 2. Detectar dispositivo Apple
     esDispositivoApple = /iPhone|iPad|iPod|Mac/.test(navigator.userAgent);
-    console.log('Dispositivo Apple:', esDispositivoApple);
+    log('Dispositivo Apple:', esDispositivoApple);
     
-    // 2. Verificar y configurar Service Worker (PRIMERO)
+    // 3. Verificar soporte Bluetooth
+    verificarSoporteBluetooth();
+    
+    // 4. Verificar y configurar Service Worker (PRIMERO)
     inicializarServiceWorker();
     
-    // 3. Cargar PIN guardado localmente (si existe)
+    // 5. Cargar PIN guardado localmente (si existe)
     cargarPINLocal();
     
-    // 4. Sincronizar PIN remoto si hay internet (sin bloquear inicio)
+    // 6. Sincronizar PIN remoto si hay internet (sin bloquear inicio)
     if (navigator.onLine) {
         setTimeout(sincronizarPIN, 500);
     }
     
-    // 5. Configurar instalación PWA (sistema universal)
+    // 7. Configurar instalación PWA (sistema universal)
     configurarInstalacionPWAUniversal();
     
-    // 6. Configurar eventos globales
+    // 8. Configurar eventos globales
     configurarEventosGlobales();
     
-    // 7. Enfocar input automáticamente y ocultar asteriscos si existe
+    // 9. Enfocar input automáticamente y ocultar asteriscos si existe
     setTimeout(() => {
         const pinInput = document.getElementById('pin-input');
         if (pinInput) {
@@ -106,14 +230,59 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }, 300);
     
-    // 8. Verificar recursos offline después de que cargue el SW
+    // 10. Verificar recursos offline después de que cargue el SW
     setTimeout(verificarRecursosOffline, 2000);
     
-    // 9. Verificar archivos de audio (solo en desarrollo)
-    if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+    // 11. Verificar archivos de audio (solo en desarrollo)
+    if (ES_DESARROLLO) {
         setTimeout(verificarArchivosAudio, 1000);
     }
 });
+
+// ==========================================
+// SISTEMA DE MIGRACIÓN DE DATOS
+// ==========================================
+function verificarMigracionDatos() {
+    const versionAnterior = localStorage.getItem('app_version');
+    
+    if (!versionAnterior) {
+        // Primera instalación
+        log('Primera instalación de la aplicación');
+        localStorage.setItem('app_version', VERSION_APP);
+        return;
+    }
+    
+    if (versionAnterior !== VERSION_APP) {
+        log(`Migrando datos de ${versionAnterior} a ${VERSION_APP}`);
+        
+        // Aquí lógica de migración si cambia estructura de datos
+        migrarDatosVersion(versionAnterior, VERSION_APP);
+        
+        localStorage.setItem('app_version', VERSION_APP);
+    }
+}
+
+function migrarDatosVersion(versionAnterior, versionNueva) {
+    try {
+        log(`Migración ${versionAnterior} → ${versionNueva}`);
+        
+        // Ejemplo: Si cambiamos estructura de almacenamiento
+        const pinViejo = localStorage.getItem('pinRemoto');
+        if (pinViejo && !localStorage.getItem('pin_remoto_backup')) {
+            localStorage.setItem('pin_remoto_backup', pinViejo);
+            log('PIN respaldado para migración');
+        }
+        
+        // Limpiar cache antiguo si existe
+        if (versionAnterior.startsWith('0.')) {
+            log('Limpiando datos de versión beta');
+            // Ejemplo: limpiar cache antiguo
+        }
+        
+    } catch (err) {
+        error('Error en migración de datos:', err);
+    }
+}
 
 // ==========================================
 // SISTEMA DE SERVICE WORKER - OFFLINE COMPLETO
@@ -123,27 +292,27 @@ function inicializarServiceWorker() {
         // Intentar registrar el Service Worker
         navigator.serviceWorker.register('sw.js')
             .then(function(registration) {
-                console.log('✅ Service Worker registrado con éxito:', registration.scope);
+                log('✅ Service Worker registrado con éxito:', registration.scope);
                 servicioWorkerActivo = true;
                 
                 // Verificar si ya está controlando la página
                 if (navigator.serviceWorker.controller) {
-                    console.log('🎮 Service Worker está controlando la página');
+                    log('🎮 Service Worker está controlando la página');
                     servicioWorkerActivo = true;
                 }
                 
                 // Escuchar mensajes del Service Worker
                 navigator.serviceWorker.addEventListener('message', function(event) {
-                    console.log('📨 Mensaje del Service Worker:', event.data);
+                    log('📨 Mensaje del Service Worker:', event.data);
                     
                     if (event.data.type === 'SW_ACTIVATED') {
-                        console.log('🔄 Service Worker activado, versión:', event.data.version);
+                        log('🔄 Service Worker activado, versión:', event.data.version);
                         servicioWorkerActivo = true;
                         mostrarNotificacion('Aplicación lista para funcionar offline');
                     }
                     
                     if (event.data.type === 'PIN_ACTUALIZADO') {
-                        console.log('📌 PIN actualizado en background:', event.data.pin);
+                        log('📌 PIN actualizado en background:', event.data.pin);
                         PIN_APP = event.data.pin;
                         ultimaActualizacionPIN = event.data.fecha;
                         
@@ -152,7 +321,7 @@ function inicializarServiceWorker() {
                             localStorage.setItem('pinRemoto', event.data.pin);
                             localStorage.setItem('pinActualizado', event.data.fecha);
                         } catch (error) {
-                            console.warn('Error guardando PIN actualizado:', error);
+                            warn('Error guardando PIN actualizado:', error);
                         }
                         
                         mostrarNotificacion(`PIN actualizado a: ${event.data.pin}`);
@@ -162,34 +331,34 @@ function inicializarServiceWorker() {
                 // Monitorear estado del Service Worker
                 registration.addEventListener('updatefound', function() {
                     const nuevoWorker = registration.installing;
-                    console.log('🔄 Nuevo Service Worker encontrado:', nuevoWorker.state);
+                    log('🔄 Nuevo Service Worker encontrado:', nuevoWorker.state);
                     
                     nuevoWorker.addEventListener('statechange', function() {
-                        console.log('📊 Estado del nuevo Service Worker:', this.state);
+                        log('📊 Estado del nuevo Service Worker:', this.state);
                         
                         if (this.state === 'activated') {
-                            console.log('✨ Nuevo Service Worker activado');
+                            log('✨ Nuevo Service Worker activado');
                             mostrarNotificacion('Aplicación actualizada. Recargue para usar nuevas funciones.');
                         }
                     });
                 });
             })
-            .catch(function(error) {
-                console.error('❌ Error registrando Service Worker:', error);
+            .catch(function(err) {
+                error('❌ Error registrando Service Worker:', err);
                 servicioWorkerActivo = false;
                 
                 // Si falla el SW, activar modo offline básico
                 activarModoOfflineBasico();
             });
     } else {
-        console.warn('⚠️ Service Worker no soportado en este navegador');
+        warn('⚠️ Service Worker no soportado en este navegador');
         servicioWorkerActivo = false;
         activarModoOfflineBasico();
     }
 }
 
 function activarModoOfflineBasico() {
-    console.log('📴 Activando modo offline básico');
+    log('📴 Activando modo offline básico');
     
     // Intentar cachear recursos manualmente
     const recursos = [
@@ -211,11 +380,11 @@ function activarModoOfflineBasico() {
 
 function verificarRecursosOffline() {
     if (!servicioWorkerActivo) {
-        console.warn('⚠️ No se puede verificar recursos offline - Service Worker inactivo');
+        warn('⚠️ No se puede verificar recursos offline - Service Worker inactivo');
         return;
     }
     
-    console.log('🔍 Verificando recursos cacheados...');
+    log('🔍 Verificando recursos cacheados...');
     
     // Crear un canal de mensajes
     const channel = new MessageChannel();
@@ -223,13 +392,13 @@ function verificarRecursosOffline() {
     // Configurar respuesta
     channel.port1.onmessage = function(event) {
         if (event.data.type === 'ESTADO_CACHE') {
-            console.log('📊 Estado del cache:', event.data);
+            log('📊 Estado del cache:', event.data);
             
             const totalCacheado = event.data.total;
             const totalEsperado = 14; // Número de archivos que deberían estar cacheados
             
             if (totalCacheado >= totalEsperado) {
-                console.log('✅ Recursos offline verificados correctamente');
+                log('✅ Recursos offline verificados correctamente');
                 recursosOfflineVerificados = true;
                 
                 // Mostrar indicador visual si está en home screen
@@ -237,11 +406,11 @@ function verificarRecursosOffline() {
                     mostrarNotificacion('✅ Aplicación lista para uso offline');
                 }
             } else {
-                console.warn(`⚠️ Solo ${totalCacheado}/${totalEsperado} recursos en cache`);
+                warn(`⚠️ Solo ${totalCacheado}/${totalEsperado} recursos en cache`);
                 
                 // Intentar recachear
                 if (navigator.onLine) {
-                    console.log('🔄 Intentando recachear recursos faltantes...');
+                    log('🔄 Intentando recachear recursos faltantes...');
                     recachearRecursosFaltantes();
                 }
             }
@@ -255,7 +424,7 @@ function verificarRecursosOffline() {
             [channel.port2]
         );
     } else {
-        console.warn('⚠️ Service Worker no está controlando la página');
+        warn('⚠️ Service Worker no está controlando la página');
     }
 }
 
@@ -282,7 +451,7 @@ function cargarPINLocal() {
         if (pinGuardado && /^\d{4}$/.test(pinGuardado)) {
             PIN_APP = pinGuardado;
             const fechaActualizacion = localStorage.getItem('pinActualizado');
-            console.log('📌 PIN cargado desde almacenamiento local:', PIN_APP, 
+            log('📌 PIN cargado desde almacenamiento local:', PIN_APP, 
                        fechaActualizacion ? '(Actualizado: ' + fechaActualizacion + ')' : '');
             
             // También verificar en cache del Service Worker
@@ -296,110 +465,121 @@ function cargarPINLocal() {
                     })
                     .then(data => {
                         if (data && data.pin && /^\d{4}$/.test(data.pin)) {
-                            console.log('📌 PIN encontrado en cache del SW:', data.pin);
+                            log('📌 PIN encontrado en cache del SW:', data.pin);
                             PIN_APP = data.pin;
                         }
                     })
-                    .catch(error => console.log('No hay PIN en cache SW:', error));
+                    .catch(err => log('No hay PIN en cache SW:', err));
             }
         }
-    } catch (error) {
-        console.warn('Error cargando PIN local:', error);
+    } catch (err) {
+        warn('Error cargando PIN local:', err);
     }
 }
 
 async function sincronizarPIN() {
     // Si estamos offline y el SW está activo, usar cache
     if (!navigator.onLine && servicioWorkerActivo) {
-        console.log('📡 Offline - usando PIN cacheado si existe');
+        log('📡 Offline - usando PIN cacheado si existe');
         return cargarPINLocal();
     }
     
     // Solo intentar si hay internet
     if (!navigator.onLine) {
-        console.log('🌐 Sin conexión - usando PIN local');
+        log('🌐 Sin conexión - usando PIN local');
         esModoOffline = true;
         return;
     }
     
     esModoOffline = false;
     
-    try {
-        console.log('🔄 Sincronizando PIN remoto...');
-        
-        // Timeout de 5 segundos máximo
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 5000);
-        
-        // Fetch con cache busting
-        const respuesta = await fetch(URL_PIN_REMOTO + '?t=' + Date.now(), {
-            signal: controller.signal,
-            cache: 'no-store',
-            headers: {
-                'Pragma': 'no-cache',
-                'Cache-Control': 'no-cache'
+    let exito = false;
+    
+    // Intentar cada URL de la lista
+    for (const url of URLS_PIN_REMOTO) {
+        try {
+            log(`🔄 Intentando sincronizar PIN desde: ${url}`);
+            
+            // Timeout de 5 segundos máximo
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 5000);
+            
+            // Fetch con cache busting
+            const respuesta = await fetch(url + '?t=' + Date.now(), {
+                signal: controller.signal,
+                cache: 'no-store'
+            });
+            
+            clearTimeout(timeoutId);
+            
+            if (!respuesta.ok) {
+                throw new Error(`HTTP ${respuesta.status}`);
             }
-        });
-        
-        clearTimeout(timeoutId);
-        
-        if (!respuesta.ok) {
-            throw new Error(`HTTP ${respuesta.status}`);
-        }
-        
-        const nuevoPIN = (await respuesta.text()).trim();
-        
-        // Validar que sea un PIN de 4 dígitos
-        if (/^\d{4}$/.test(nuevoPIN)) {
-            if (nuevoPIN !== PIN_APP) {
-                PIN_APP = nuevoPIN;
-                ultimaActualizacionPIN = new Date().toLocaleString('es-ES', {
-                    day: '2-digit',
-                    month: '2-digit',
-                    year: 'numeric',
-                    hour: '2-digit',
-                    minute: '2-digit'
-                });
-                
-                console.log('✅ PIN actualizado remotamente:', PIN_APP);
-                
-                // Guardar en localStorage para offline
-                try {
-                    localStorage.setItem('pinRemoto', PIN_APP);
-                    localStorage.setItem('pinActualizado', ultimaActualizacionPIN);
-                } catch (error) {
-                    console.warn('Error guardando PIN en localStorage:', error);
+            
+            const nuevoPIN = (await respuesta.text()).trim();
+            
+            // Validar que sea un PIN de 4 dígitos
+            if (/^\d{4}$/.test(nuevoPIN)) {
+                if (nuevoPIN !== PIN_APP) {
+                    PIN_APP = nuevoPIN;
+                    ultimaActualizacionPIN = new Date().toLocaleString('es-ES', {
+                        day: '2-digit',
+                        month: '2-digit',
+                        year: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit'
+                    });
+                    
+                    log('✅ PIN actualizado remotamente:', PIN_APP);
+                    
+                    // Guardar en localStorage para offline
+                    try {
+                        localStorage.setItem('pinRemoto', PIN_APP);
+                        localStorage.setItem('pinActualizado', ultimaActualizacionPIN);
+                    } catch (err) {
+                        warn('Error guardando PIN en localStorage:', err);
+                    }
+                    
+                    // Guardar también en cache del Service Worker
+                    if ('caches' in window) {
+                        caches.open('campanas-pwa-v' + VERSION_APP)
+                            .then(cache => {
+                                cache.put(
+                                    new Request('/pin-remoto-cache'),
+                                    new Response(JSON.stringify({
+                                        pin: nuevoPIN,
+                                        fecha: new Date().toISOString()
+                                    }))
+                                );
+                                log('📦 PIN guardado en cache del SW');
+                            })
+                            .catch(err => warn('Error guardando PIN en cache:', err));
+                    }
+                    
+                    log('PIN actualizado remotamente a:', PIN_APP);
+                    mostrarNotificacion(`PIN actualizado a: ${PIN_APP}`);
+                    
+                } else {
+                    log('📌 PIN ya está actualizado');
                 }
                 
-                // Guardar también en cache del Service Worker
-                if ('caches' in window) {
-                    caches.open('campanas-pwav1')
-                        .then(cache => {
-                            cache.put(
-                                new Request('/pin-remoto-cache'),
-                                new Response(JSON.stringify({
-                                    pin: nuevoPIN,
-                                    fecha: new Date().toISOString()
-                                }))
-                            );
-                            console.log('📦 PIN guardado en cache del SW');
-                        })
-                        .catch(error => console.warn('Error guardando PIN en cache:', error));
-                }
-                
-                console.log('PIN actualizado remotamente a:', PIN_APP);
-                mostrarNotificacion(`PIN actualizado a: ${PIN_APP}`);
-                
+                exito = true;
+                break; // Salir del loop si éxito
             } else {
-                console.log('📌 PIN ya está actualizado');
+                warn('⚠️ PIN remoto no válido (debe ser 4 dígitos):', nuevoPIN);
             }
-        } else {
-            console.warn('⚠️ PIN remoto no válido (debe ser 4 dígitos):', nuevoPIN);
+            
+        } catch (err) {
+            log(`❌ Error sincronizando desde ${url}:`, err.name, err.message);
+            
+            // Continuar con la siguiente URL
+            continue;
         }
-        
-    } catch (error) {
-        console.log('❌ Error sincronizando PIN:', error.name, error.message);
+    }
+    
+    if (!exito) {
         esModoOffline = true;
+        log('🌐 Todas las URLs de PIN fallaron');
         
         // Usar PIN guardado localmente si existe
         cargarPINLocal();
@@ -417,7 +597,7 @@ async function sincronizarPIN() {
 // INSTALACIÓN PWA UNIVERSAL (20+ AÑOS) - MEJORADA
 // ==========================================
 function configurarInstalacionPWAUniversal() {
-    console.log('🔧 Configurando sistema de instalación universal v2.0');
+    log('🔧 Configurando sistema de instalación universal v2.0');
     
     // Detectar si ya está instalada
     const yaInstalada = 
@@ -426,7 +606,7 @@ function configurarInstalacionPWAUniversal() {
         document.referrer.includes('android-app://');
     
     if (yaInstalada) {
-        console.log('🏠 PWA ya instalada');
+        log('🏠 PWA ya instalada');
         
         // Ocultar botones de instalación inmediatamente
         ocultarBotonesInstalacion();
@@ -447,13 +627,13 @@ function configurarInstalacionPWAUniversal() {
         if (installButton) {
             installButton.onclick = manejarInstalacionPWA;
             installButton.style.display = 'block';
-            console.log('✅ Botón instalación principal configurado');
+            log('✅ Botón instalación principal configurado');
         }
         
         if (installLoginButton) {
             installLoginButton.onclick = manejarInstalacionPWA;
             installLoginButton.style.display = 'block';
-            console.log('✅ Botón instalación login configurado');
+            log('✅ Botón instalación login configurado');
         }
         
     }, 1500);
@@ -461,7 +641,7 @@ function configurarInstalacionPWAUniversal() {
     // Manejar beforeinstallprompt para Chrome/Edge
     let deferredPrompt;
     window.addEventListener('beforeinstallprompt', (e) => {
-        console.log('📱 Evento beforeinstallprompt capturado');
+        log('📱 Evento beforeinstallprompt capturado');
         e.preventDefault();
         deferredPrompt = e;
         
@@ -471,7 +651,7 @@ function configurarInstalacionPWAUniversal() {
     
     // Detectar cuando se instala
     window.addEventListener('appinstalled', (evt) => {
-        console.log('✅ PWA instalada exitosamente');
+        log('✅ PWA instalada exitosamente');
         ocultarBotonesInstalacion();
         mostrarNotificacion('¡Aplicación instalada! Ya puede usarla offline.');
     });
@@ -482,12 +662,15 @@ function manejarInstalacionPWA() {
     if (!recursosOfflineVerificados && servicioWorkerActivo) {
         verificarRecursosOffline();
         
-        const confirmar = confirm(
+        mostrarAlert(
             'Antes de instalar, necesitamos verificar que todos los recursos estén disponibles offline.\n\n' +
             '¿Desea continuar con la verificación?'
-        );
+        ).then(() => {
+            // Continuar con instrucciones
+            mostrarInstruccionesInstalacionUniversal();
+        });
         
-        if (!confirmar) return;
+        return;
     }
     
     // Mostrar instrucciones universales
@@ -578,7 +761,7 @@ function verificarSiYaInstalada() {
         (window.location.search.includes('source=pwa') && window.history.length === 1);
     
     if (yaInstalada) {
-        console.log('🏠 PWA ya instalada - ocultando botones');
+        log('🏠 PWA ya instalada - ocultando botones');
         ocultarBotonesInstalacion();
     }
 }
@@ -595,7 +778,7 @@ function ocultarBotonesInstalacion() {
         const elemento = document.getElementById(id);
         if (elemento) {
             elemento.style.display = 'none';
-            console.log(`✅ Ocultado: #${id}`);
+            log(`✅ Ocultado: #${id}`);
         }
     });
 }
@@ -616,19 +799,20 @@ function configurarEventosGlobales() {
     
     // 2. Sincronizar PIN cuando vuelve la conexión
     window.addEventListener('online', () => {
-        console.log('🌐 Conexión restaurada');
+        log('🌐 Conexión restaurada');
         esModoOffline = false;
         mostrarNotificacion('Conexión a internet restaurada');
         
         // Sincronizar PIN y verificar actualizaciones
         setTimeout(sincronizarPIN, 1000);
-        
-        // Verificar actualizaciones del Service Worker
+    });
+    
+    window.addEventListener('online', () => {
         if ('serviceWorker' in navigator) {
             navigator.serviceWorker.getRegistration().then(reg => {
                 if (reg) {
                     reg.update();
-                    console.log('🔄 Service Worker actualización verificada');
+                    log('🔄 Verificando actualizaciones (conexión restaurada)');
                 }
             });
         }
@@ -636,7 +820,7 @@ function configurarEventosGlobales() {
     
     // 3. Detectar cuando se pierde conexión
     window.addEventListener('offline', () => {
-        console.log('⚠️ Sin conexión a internet');
+        log('⚠️ Sin conexión a internet');
         esModoOffline = true;
         
         // Solo mostrar notificación si está instalada
@@ -647,11 +831,11 @@ function configurarEventosGlobales() {
     
     // 4. Manejar errores globales (silenciosamente)
     window.addEventListener('error', function(e) {
-        console.error('⚠️ Error global capturado:', e.message, 'en', e.filename, 'línea', e.lineno);
+        error('⚠️ Error global capturado:', e.message, 'en', e.filename, 'línea', e.lineno);
         
         // Intentar recuperación para errores críticos
         if (e.message.includes('audio') || e.message.includes('Audio')) {
-            console.log('🔧 Intentando recuperar sistema de audio...');
+            log('🔧 Intentando recuperar sistema de audio...');
             detenerSonido();
         }
     });
@@ -677,7 +861,7 @@ function configurarEventosGlobales() {
     // 7. Manejar visibilidad de página para ahorrar batería
     document.addEventListener('visibilitychange', function() {
         if (document.hidden && audioActual) {
-            console.log('📱 Página oculta - pausando audio si está reproduciendo');
+            log('📱 Página oculta - pausando audio si está reproduciendo');
             if (!audioActual.paused) {
                 audioActual.pause();
                 // Guardar posición para reanudar
@@ -724,7 +908,7 @@ function validarPinInput(input) {
 // ==========================================
 // VERIFICACIÓN DE ACCESO (SIMPLE) - MEJORADA
 // ==========================================
-function verificarAcceso() {
+async function verificarAcceso() {
     const pinInput = document.getElementById('pin-input');
     
     if (!pinInput) {
@@ -757,7 +941,7 @@ function verificarAcceso() {
             setTimeout(sincronizarPIN, 500);
         }
         
-        console.log('✅ Acceso concedido');
+        log('✅ Acceso concedido');
         
         // Mostrar estado offline si aplica
         if (esModoOffline && servicioWorkerActivo) {
@@ -787,7 +971,7 @@ function verificarAcceso() {
             pinInput.style.boxShadow = 'none';
         }, 100);
         
-        console.log('❌ Acceso denegado - PIN incorrecto');
+        log('❌ Acceso denegado - PIN incorrecto');
     }
 }
 
@@ -796,8 +980,14 @@ function verificarAcceso() {
 // ==========================================
 function playAudio(archivo) {
     if (!archivo || typeof archivo !== 'string') {
-        console.error('❌ Nombre de archivo inválido');
+        error('❌ Nombre de archivo inválido');
         mostrarNotificacion('Error: Archivo de audio no válido');
+        return;
+    }
+    
+    // Detectar formato soportado
+    if (!detectarFormatosAudioSoportados()) {
+        mostrarAlert('Formato de audio no soportado en este navegador.');
         return;
     }
     
@@ -811,23 +1001,23 @@ function playAudio(archivo) {
         audioActual.load();
         
         audioActual.oncanplaythrough = function() {
-            console.log('✅ Audio listo:', archivo);
+            log('✅ Audio listo:', archivo);
         };
         
         audioActual.onerror = function(e) {
-            console.error('❌ Error cargando audio:', archivo, e);
+            error('❌ Error cargando audio:', archivo, e);
             mostrarNotificacion('Error reproduciendo audio');
             detenerSonido();
             
             // Intentar cargar desde cache si falla
             if ('caches' in window && servicioWorkerActivo) {
-                console.log('🔄 Intentando cargar audio desde cache...');
+                log('🔄 Intentando cargar audio desde cache...');
                 cargarAudioDesdeCache(archivo);
             }
         };
         
         audioActual.onended = function() {
-            console.log('⏹️ Audio terminado:', archivo);
+            log('⏹️ Audio terminado:', archivo);
             detenerSonido();
         };
         
@@ -839,11 +1029,11 @@ function playAudio(archivo) {
                 if (promesaReproduccion !== undefined) {
                     promesaReproduccion
                         .then(() => {
-                            console.log('🔊 Reproduciendo en iOS:', archivo);
+                            log('🔊 Reproduciendo en iOS:', archivo);
                             document.body.removeEventListener('touchstart', activarAudioIOS);
                         })
-                        .catch(error => {
-                            console.warn('⚠️ Error reproduciendo en iOS:', error);
+                        .catch(err => {
+                            warn('⚠️ Error reproduciendo en iOS:', err);
                         });
                 }
             }, { once: true });
@@ -857,12 +1047,12 @@ function playAudio(archivo) {
         if (promesaReproduccion !== undefined) {
             promesaReproduccion
                 .then(() => {
-                    console.log('🔊 Reproduciendo:', archivo);
+                    log('🔊 Reproduciendo:', archivo);
                 })
-                .catch(error => {
-                    console.warn('⚠️ Error reproduciendo:', archivo, error);
+                .catch(err => {
+                    warn('⚠️ Error reproduciendo:', archivo, err);
                     
-                    if (error.name === 'NotAllowedError') {
+                    if (err.name === 'NotAllowedError') {
                         mostrarNotificacion('Haga clic en la pantalla para activar el audio');
                     }
                     
@@ -870,10 +1060,26 @@ function playAudio(archivo) {
                 });
         }
         
-    } catch (error) {
-        console.error('❌ Error crítico en audio:', error);
+    } catch (err) {
+        error('❌ Error crítico en audio:', err);
         detenerSonido();
     }
+}
+
+function detectarFormatosAudioSoportados() {
+    const audio = document.createElement('audio');
+    const formatos = ['mp3', 'wav', 'ogg', 'opus'];
+    
+    for (const formato of formatos) {
+        const canPlay = audio.canPlayType(`audio/${formato}`);
+        if (canPlay === 'probably' || canPlay === 'maybe') {
+            log(`✅ Formato ${formato} soportado`);
+            return true;
+        }
+    }
+    
+    warn('⚠️ Ningún formato de audio soportado');
+    return false;
 }
 
 function cargarAudioDesdeCache(archivo) {
@@ -881,17 +1087,23 @@ function cargarAudioDesdeCache(archivo) {
         caches.match(archivo)
             .then(response => {
                 if (response) {
-                    console.log('🎵 Cargando audio desde cache:', archivo);
+                    log('🎵 Cargando audio desde cache:', archivo);
                     const audioURL = URL.createObjectURL(response.blob());
                     playAudio(audioURL);
                 }
             })
-            .catch(error => console.log('Audio no encontrado en cache:', error));
+            .catch(err => log('Audio no encontrado en cache:', err));
     }
 }
 
-function confirmarEmergencia() {
-    if (confirm("🚨 ¿ESTÁ SEGURO DE ACTIVAR LA ALARMA DE EMERGENCIA?\n\nEsta acción hará sonar la alarma máxima.")) {
+async function confirmarEmergencia() {
+    const respuesta = await mostrarPrompt(
+        "🚨 ¿ESTÁ SEGURO DE ACTIVAR LA ALARMA DE EMERGENCIA?\n\n" +
+        "Esta acción hará sonar la alarma máxima.\n\n" +
+        "Escriba 'CONFIRMAR' para continuar:"
+    );
+    
+    if (respuesta === 'CONFIRMAR') {
         playAudio('emergencia.mp3');
     }
 }
@@ -902,12 +1114,18 @@ function detenerSonido() {
             audioActual.pause();
             audioActual.currentTime = 0;
             audioActual.src = '';
+            
+            // Liberar recursos de audio
+            if (audioActual.src.startsWith('blob:')) {
+                URL.revokeObjectURL(audioActual.src);
+            }
+            
             audioActual = null;
             
-            console.log('⏹️ Sonido detenido');
+            log('⏹️ Sonido detenido');
             
-        } catch (error) {
-            console.warn('Advertencia al detener sonido:', error);
+        } catch (err) {
+            warn('Advertencia al detener sonido:', err);
         }
     }
 }
@@ -916,8 +1134,8 @@ function detenerSonido() {
 // NAVEGACIÓN ENTRE PANTALLAS
 // ==========================================
 function mostrarInstruccionesBluetooth() {
-    const mensaje = 
-`📡 CONEXIÓN BLUETOOTH:
+    mostrarAlert(
+        `📡 CONEXIÓN BLUETOOTH:
 
 Para conectar con el módulo Bluetooth (1Mii o similar):
 
@@ -933,12 +1151,11 @@ Para conectar con el módulo Bluetooth (1Mii o similar):
 • Mantenga el celular cerca del módulo
 • Si no aparece, reinicie ambos dispositivos
 
-💡 CONSEJO: Use esta app en modo instalado (como aplicación) para mejor estabilidad.`;
-
-    alert(mensaje);
+💡 CONSEJO: Use esta app en modo instalado (como aplicación) para mejor estabilidad.`
+    );
 }
 
-function intentarConfiguracion() {
+async function intentarConfiguracion() {
     // Si ya hay sesión admin activa, ir directamente
     if (sesionAdminActiva) {
         document.getElementById('home-screen').classList.add('hidden');
@@ -946,14 +1163,14 @@ function intentarConfiguracion() {
         return;
     }
     
-    const password = prompt("🔐 Ingrese Clave Maestra para CONFIGURACIÓN ADMIN:");
+    const password = await mostrarPrompt("🔐 Ingrese Clave Maestra para CONFIGURACIÓN ADMIN:");
     if (password === CLAVE_MAESTRA) {
         sesionAdminActiva = true;
         document.getElementById('home-screen').classList.add('hidden');
         document.getElementById('config-screen').classList.remove('hidden');
         
     } else if (password !== null) {
-        alert("Clave maestra incorrecta.");
+        mostrarAlert("Clave maestra incorrecta.");
     }
 }
 
@@ -962,20 +1179,22 @@ function irAHome() {
     document.getElementById('home-screen').classList.remove('hidden');
 }
 
-function cambiarPinApp() {
+async function cambiarPinApp() {
     // Verificar sesión admin
     if (!sesionAdminActiva) {
-        const password = prompt("🔐 Ingrese Clave Maestra para cambiar PIN:");
+        const password = await mostrarPrompt("🔐 Ingrese Clave Maestra para cambiar PIN:");
         if (password !== CLAVE_MAESTRA) {
-            alert("Clave incorrecta");
+            mostrarAlert("Clave incorrecta");
             return;
         }
         sesionAdminActiva = true;
     }
     
-    const nuevoPIN = prompt("Nuevo PIN global (4 dígitos):");
+    const nuevoPIN = await mostrarPrompt("Nuevo PIN global (4 dígitos):", PIN_APP);
+    if (nuevoPIN === null) return; // Usuario canceló
+    
     if (!nuevoPIN || !/^\d{4}$/.test(nuevoPIN)) {
-        alert("PIN debe ser 4 dígitos numéricos");
+        mostrarAlert("PIN debe ser 4 dígitos numéricos");
         return;
     }
     
@@ -985,11 +1204,16 @@ function cambiarPinApp() {
     try {
         localStorage.setItem('pinRemoto', nuevoPIN);
         localStorage.setItem('pinActualizado', ultimaActualizacionPIN);
-    } catch (error) {
-        console.warn('Error guardando PIN en localStorage:', error);
+    } catch (err) {
+        warn('Error guardando PIN en localStorage:', err);
     }
     
-    alert(`✅ PIN cambiado exitosamente a: ${nuevoPIN}\n\n📝 Nota: Para efecto global en todos los dispositivos, actualice también el archivo remoto:\n${URL_PIN_REMOTO}\n\nLos dispositivos se actualizarán automáticamente al conectarse a internet.`);
+    mostrarAlert(
+        `✅ PIN cambiado exitosamente a: ${nuevoPIN}\n\n` +
+        `📝 Nota: Para efecto global en todos los dispositivos, actualice también el archivo remoto:\n` +
+        `${URLS_PIN_REMOTO[0]}\n\n` +
+        `Los dispositivos se actualizarán automáticamente al conectarse a internet.`
+    );
 }
 
 // ==========================================
@@ -1003,7 +1227,7 @@ function abrirAyuda() {
         const qrImg = modal.querySelector('.qr-img');
         if (qrImg) {
             qrImg.onerror = function() {
-                console.warn('❌ QR no encontrado');
+                warn('❌ QR no encontrado');
                 this.alt = 'QR no disponible - Contacte al administrador';
                 this.style.border = '2px dashed #ccc';
                 this.src = 'icon-192.png'; // Fallback a icono
@@ -1022,7 +1246,11 @@ function cerrarAyuda() {
 function abrirPDF() {
     // Verificar si estamos offline
     if (!navigator.onLine) {
-        alert('📴 Modo offline activado\n\nEl PDF de instrucciones requiere conexión a internet.\n\nPor favor, conéctese a internet para acceder al manual completo.');
+        mostrarAlert(
+            '📴 Modo offline activado\n\n' +
+            'El PDF de instrucciones requiere conexión a internet.\n\n' +
+            'Por favor, conéctese a internet para acceder al manual completo.'
+        );
         return;
     }
     
@@ -1034,7 +1262,7 @@ function abrirPDF() {
 // FUNCIONES DE VERIFICACIÓN Y UTILIDADES
 // ==========================================
 function verificarArchivosAudio() {
-    console.log('🔍 Verificando archivos de audio...');
+    log('🔍 Verificando archivos de audio...');
     
     const archivos = ['campana1.mp3', 'campana2.mp3', 'campana3.mp3', 'emergencia.mp3'];
     let archivosFaltantes = [];
@@ -1043,12 +1271,12 @@ function verificarArchivosAudio() {
         const audio = new Audio();
         
         audio.onerror = () => {
-            console.warn(`❌ Archivo no encontrado: ${archivo}`);
+            warn(`❌ Archivo no encontrado: ${archivo}`);
             archivosFaltantes.push(archivo);
         };
         
         audio.oncanplaythrough = () => {
-            console.log(`✅ ${archivo} encontrado`);
+            log(`✅ ${archivo} encontrado`);
         };
         
         audio.src = archivo;
@@ -1057,15 +1285,15 @@ function verificarArchivosAudio() {
     
     setTimeout(() => {
         if (archivosFaltantes.length > 0) {
-            console.warn(`⚠️ ${archivosFaltantes.length} archivo(s) de audio faltan:`, archivosFaltantes);
+            warn(`⚠️ ${archivosFaltantes.length} archivo(s) de audio faltan:`, archivosFaltantes);
             
             // Intentar descargar si estamos online
             if (navigator.onLine) {
-                console.log('🔄 Intentando descargar archivos faltantes...');
+                log('🔄 Intentando descargar archivos faltantes...');
                 descargarArchivosFaltantes(archivosFaltantes);
             }
         } else {
-            console.log('✅ Todos los archivos de audio están presentes');
+            log('✅ Todos los archivos de audio están presentes');
         }
     }, 3000);
 }
@@ -1073,11 +1301,11 @@ function verificarArchivosAudio() {
 function descargarArchivosFaltantes(archivos) {
     // Esta función intentaría descargar archivos faltantes
     // En una implementación real, se comunicaría con el servidor
-    console.log('Simulando descarga de archivos faltantes:', archivos);
+    log('Simulando descarga de archivos faltantes:', archivos);
 }
 
 function mostrarNotificacion(mensaje) {
-    console.log('💬 Notificación:', mensaje);
+    log('💬 Notificación:', mensaje);
     
     // Crear notificación simple
     const notificacion = document.createElement('div');
@@ -1151,7 +1379,7 @@ function cerrarSesion() {
     // Resetear sesión admin al cerrar sesión
     sesionAdminActiva = false;
     
-    console.log('👋 Sesión cerrada');
+    log('👋 Sesión cerrada');
     mostrarNotificacion('Sesión cerrada');
 }
 
@@ -1166,22 +1394,87 @@ if (typeof console === 'undefined') {
     };
 }
 
+// POLYFILL MEJORADO PARA LOCALSTORAGE
 if (typeof localStorage === 'undefined') {
-    console.warn('⚠️ localStorage no disponible - usando objeto temporal');
+    warn('⚠️ localStorage no disponible - usando IndexedDB como polyfill');
+    
+    const DB_NAME = 'campanas_localstorage';
+    const STORE_NAME = 'keyvaluepairs';
+    
+    let db;
+    
+    // Inicializar IndexedDB
+    const initDB = new Promise((resolve, reject) => {
+        const request = indexedDB.open(DB_NAME, 1);
+        
+        request.onerror = () => reject(request.error);
+        request.onsuccess = () => {
+            db = request.result;
+            resolve(db);
+        };
+        
+        request.onupgradeneeded = (event) => {
+            const db = event.target.result;
+            if (!db.objectStoreNames.contains(STORE_NAME)) {
+                db.createObjectStore(STORE_NAME);
+            }
+        };
+    });
+    
     window.localStorage = {
-        _data: {},
+        _ready: initDB,
+        
         setItem: function(key, value) {
-            this._data[key] = String(value);
+            this._ready.then(() => {
+                return new Promise((resolve, reject) => {
+                    const transaction = db.transaction([STORE_NAME], 'readwrite');
+                    const store = transaction.objectStore(STORE_NAME);
+                    const request = store.put(value, key);
+                    
+                    request.onsuccess = () => resolve();
+                    request.onerror = () => reject(request.error);
+                });
+            }).catch(err => warn('Error setItem IndexedDB:', err));
         },
+        
         getItem: function(key) {
-            return this._data.hasOwnProperty(key) ? this._data[key] : null;
+            return new Promise((resolve) => {
+                this._ready.then(() => {
+                    const transaction = db.transaction([STORE_NAME], 'readonly');
+                    const store = transaction.objectStore(STORE_NAME);
+                    const request = store.get(key);
+                    
+                    request.onsuccess = () => resolve(request.result || null);
+                    request.onerror = () => resolve(null);
+                }).catch(() => resolve(null));
+            });
         },
+        
         removeItem: function(key) {
-            delete this._data[key];
+            this._ready.then(() => {
+                return new Promise((resolve, reject) => {
+                    const transaction = db.transaction([STORE_NAME], 'readwrite');
+                    const store = transaction.objectStore(STORE_NAME);
+                    const request = store.delete(key);
+                    
+                    request.onsuccess = () => resolve();
+                    request.onerror = () => reject(request.error);
+                });
+            }).catch(err => warn('Error removeItem IndexedDB:', err));
         },
+        
         clear: function() {
-            this._data = {};
-        }
+            this._ready.then(() => {
+                return new Promise((resolve, reject) => {
+                    const transaction = db.transaction([STORE_NAME], 'readwrite');
+                    const store = transaction.objectStore(STORE_NAME);
+                    const request = store.clear();
+                    
+                    request.onsuccess = () => resolve();
+                    request.onerror = () => reject(request.error);
+                });
+            }).catch(err => warn('Error clear IndexedDB:', err));
+    }
     };
 }
 
@@ -1223,36 +1516,6 @@ window.abrirPDF = abrirPDF;
 window.cerrarSesion = cerrarSesion;
 window.cerrarModalInstalacion = cerrarModalInstalacion;
 window.verificarRecursosOffline = verificarRecursosOffline;
+window.conectarBluetooth = conectarBluetooth;
 
-console.log('✅ app.js v2.0 cargado completamente - Sistema listo para 20+ años');
-
-// ==========================================
-// AUTO-VERIFICACIÓN DE ACTUALIZACIONES
-// ==========================================
-// Verificar actualizaciones periódicamente
-setInterval(() => {
-    if (navigator.onLine && 'serviceWorker' in navigator) {
-        navigator.serviceWorker.getRegistration().then(reg => {
-            if (reg) {
-                reg.update();
-                console.log('🔄 Verificación periódica de actualizaciones');
-            }
-        });
-    }
-}, 1000 * 60 * 60 * 4); // Cada 4 horas
-
-// Verificar al volver a la aplicación
-document.addEventListener('visibilitychange', function() {
-    if (!document.hidden && navigator.onLine) {
-        // La aplicación volvió a estar visible y hay internet
-        setTimeout(() => {
-            if ('serviceWorker' in navigator) {
-                navigator.serviceWorker.getRegistration().then(reg => {
-                    if (reg) {
-                        reg.update();
-                    }
-                });
-            }
-        }, 1000);
-    }
-});
+log('✅ app.js v2.0 cargado completamente - Sistema listo para 20+ años');
