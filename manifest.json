@@ -1,10 +1,10 @@
 {
-  "id": "/campanas-parroquiales/",
+  "id": "/campanas-parroquiales/?v=1.0.0",
   "name": "Campanas Parroquiales",
   "short_name": "Campanas",
   "description": "Sistema de Control de Campanas para templos religiosos - Funciona 100% offline",
-  "start_url": "./index.html",
-  "scope": "/",
+  "start_url": "./index.html?v=1.0.0",
+  "scope": "./",
   "display": "standalone",
   "display_override": ["standalone", "minimal-ui", "window-controls-overlay"],
   "orientation": "portrait",
@@ -88,10 +88,7 @@
   "edge_side_panel": {
     "preferred_width": 400
   },
-  "permissions": [
-    "storage",
-    "notifications"
-  ],
+  "permissions": ["bluetooth", "storage", "notifications"],
   "shortcuts": [
     {
       "name": "Primer Toque",
@@ -145,24 +142,7 @@
       "url": "link"
     }
   },
-  "related_applications": [
-    {
-      "platform": "webapp",
-      "url": "https://tu-dominio.com/manifest.json"
-    }
-  ],
-  "prefer_related_applications": false,
-  "iarc_rating_id": "e5c8b0a0-0000-0000-0000-000000000000",
-  "features": [
-    "cross-origin-isolated",
-    "web-share",
-    "storage-access-api",
-    "run-on-os-login"
-  ],
-  "serviceworker": {
-    "src": "./sw.js",
-    "scope": "/",
-    "use_cache": true,
-    "update_via_cache": "none"
-  }
+  "capture_links": "existing-client-navigate",
+  "related_applications": [],
+  "prefer_related_applications": false
 }
