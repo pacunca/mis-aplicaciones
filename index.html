@@ -764,6 +764,57 @@
         })();
     </script>
     
+<!-- Script de emergencia para bucles infinitos -->
+<script>
+  // Detectar bucles de recarga
+  (function() {
+    // Contador de recargas
+    let reloadCount = sessionStorage.getItem('reloadCount') || 0;
+    reloadCount++;
+    sessionStorage.setItem('reloadCount', reloadCount);
+    
+    console.log('🔄 Recarga #' + reloadCount);
+    
+    // Si hay más de 3 recargas en 5 segundos, hay un bucle
+    if (reloadCount > 3) {
+      console.error('🔄 BUCLE INFINITO DETECTADO - Tomando medidas');
+      
+      // 1. Limpiar sessionStorage
+      sessionStorage.removeItem('reloadCount');
+      
+      // 2. Desregistrar Service Worker
+      if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.getRegistrations().then(registrations => {
+          registrations.forEach(registration => {
+            registration.unregister();
+            console.log('🗑️ SW desregistrado');
+          });
+        });
+      }
+      
+      // 3. Limpiar caches
+      if ('caches' in window) {
+        caches.keys().then(cacheNames => {
+          cacheNames.forEach(cacheName => {
+            caches.delete(cacheName);
+            console.log('🗑️ Cache limpiada:', cacheName);
+          });
+        });
+      }
+      
+      // 4. Recargar sin SW
+      setTimeout(() => {
+        window.location.href = window.location.href + '?nocache=' + Date.now();
+      }, 500);
+    }
+    
+    // Resetear contador después de 5 segundos
+    setTimeout(() => {
+      sessionStorage.setItem('reloadCount', 0);
+    }, 5000);
+  })();
+</script>
+
     <!-- Script principal -->
     <script src="app.js" defer></script>
 </body>
