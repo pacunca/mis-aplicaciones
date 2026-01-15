@@ -830,3 +830,434 @@ input, textarea, select {
         transition-duration: 0.01ms !important;
     }
 }
+
+/* ==========================================
+   MEJORAS PARA 20+ AÑOS Y OFFLINE COMPLETO
+   ========================================== */
+
+/* 1. FALLBACKS PARA IMÁGENES/ICONOS OFFLINE */
+#app-icon,
+.home-icon,
+.qr-img {
+    position: relative;
+}
+
+/* Pseudoelemento fallback si la imagen no carga */
+#app-icon::after,
+.home-icon::after,
+.qr-img::after {
+    content: "🔔";
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 3em;
+    opacity: 0;
+    z-index: -1;
+}
+
+/* Mostrar fallback solo si la imagen no carga */
+img:not([src]), 
+img[src=""],
+img[src*="error"] {
+    opacity: 0;
+}
+
+img:not([src]) + ::after,
+img[src=""] + ::after,
+img[src*="error"] + ::after {
+    opacity: 1;
+    z-index: 1;
+}
+
+/* 2. FUENTES LOCALES COMO FALLBACK */
+@font-face {
+    font-family: 'System Fallback';
+    src: local('Arial'), local('Helvetica'), local('sans-serif');
+    font-display: swap;
+}
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen-Sans, Ubuntu, Cantarell, 
+                 'System Fallback', sans-serif;
+}
+
+/* 3. OPTIMIZACIONES DE RENDIMIENTO PARA PWA */
+@media (display-mode: standalone) {
+    /* Hardware acceleration para mejor rendimiento */
+    #app-container {
+        transform: translateZ(0);
+        -webkit-transform: translateZ(0);
+        backface-visibility: hidden;
+        -webkit-backface-visibility: hidden;
+    }
+    
+    /* Mejor scrolling en iOS */
+    .screen {
+        -webkit-overflow-scrolling: touch;
+    }
+    
+    /* Prevenir selección de texto en botones */
+    button, .nav-item {
+        -webkit-user-select: none;
+        user-select: none;
+    }
+}
+
+/* 4. ESTILOS PARA INSTALACIÓN PWA */
+/* Indicador de que la app puede instalarse */
+.install-promotion {
+    animation: pulse-install 2s infinite;
+    border-width: 3px !important;
+}
+
+@keyframes pulse-install {
+    0%, 100% { 
+        border-color: #3B82F6;
+        box-shadow: 0 0 0 rgba(59, 130, 246, 0.4);
+    }
+    50% { 
+        border-color: #60A5FA;
+        box-shadow: 0 0 20px rgba(59, 130, 246, 0.6);
+    }
+}
+
+/* 5. ESTADOS DE CONEXIÓN VISUALES */
+.status-online {
+    background: linear-gradient(90deg, #10B981 0%, #059669 100%) !important;
+    color: white !important;
+}
+
+.status-offline {
+    background: linear-gradient(90deg, #F59E0B 0%, #D97706 100%) !important;
+    color: white !important;
+}
+
+.status-error {
+    background: linear-gradient(90deg, #EF4444 0%, #DC2626 100%) !important;
+    color: white !important;
+}
+
+/* 6. MEJORAS DE ACCESIBILIDAD PARA PERSONAS MAYORES */
+@media (min-width: 768px) {
+    /* Texto más grande en tablets */
+    body {
+        font-size: 18px;
+    }
+    
+    #pin-input {
+        font-size: 40px !important;
+        height: 80px;
+    }
+    
+    .bell-btn, .stop-btn, .main-btn {
+        font-size: 20px;
+        min-height: 80px;
+    }
+}
+
+/* 7. COMPATIBILIDAD CON MODO OSCURO */
+@media (prefers-color-scheme: dark) {
+    :root {
+        --bg: #1F2937;
+        --white: #374151;
+        --gray-border: #4B5563;
+        --primary: #D1D5DB;
+        --primary-light: #9CA3AF;
+    }
+    
+    body {
+        background-color: #111827;
+    }
+    
+    #app-container {
+        background: var(--bg);
+        box-shadow: 0 0 20px rgba(0, 0, 0, 0.3);
+    }
+    
+    .login-card,
+    .config-card {
+        background: var(--white);
+        border-color: var(--gray-border);
+    }
+    
+    #pin-input {
+        background: #111827;
+        color: var(--primary);
+        border-color: var(--gray-border);
+    }
+    
+    .bluetooth-instructions {
+        background: #1E293B;
+        color: #E2E8F0;
+        border-color: #3B82F6;
+    }
+    
+    .bluetooth-instructions h4 {
+        color: #93C5FD;
+    }
+    
+    .install-advice {
+        background: #1E3A8A;
+        color: #DBEAFE;
+        border-color: #3B82F6;
+    }
+    
+    .install-hints {
+        background: #78350F;
+        color: #FDE68A;
+    }
+}
+
+/* 8. ANIMACIONES SUAVES PARA MEJOR UX */
+.fade-in {
+    animation: fadeIn 0.5s ease-out;
+}
+
+.slide-up {
+    animation: slideUp 0.3s ease-out;
+}
+
+@keyframes slideUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* 9. ESTILOS PARA ERRORES Y ADVERTENCIAS */
+.error-message {
+    background: linear-gradient(90deg, #FEE2E2 0%, #FECACA 100%);
+    border: 2px solid #EF4444;
+    color: #7F1D1D;
+    padding: 12px;
+    border-radius: 10px;
+    margin: 10px 0;
+    font-weight: 600;
+}
+
+.success-message {
+    background: linear-gradient(90deg, #D1FAE5 0%, #A7F3D0 100%);
+    border: 2px solid #10B981;
+    color: #064E3B;
+    padding: 12px;
+    border-radius: 10px;
+    margin: 10px 0;
+    font-weight: 600;
+}
+
+.warning-message {
+    background: linear-gradient(90deg, #FEF3C7 0%, #FDE68A 100%);
+    border: 2px solid #F59E0B;
+    color: #92400E;
+    padding: 12px;
+    border-radius: 10px;
+    margin: 10px 0;
+    font-weight: 600;
+}
+
+/* 10. MEJORAS DE IMPRESIÓN (PARA MANUALES) */
+@media print {
+    .bottom-nav,
+    .install-advice,
+    .install-box,
+    button {
+        display: none !important;
+    }
+    
+    .screen {
+        padding: 0;
+        min-height: auto;
+        display: block;
+    }
+    
+    #app-container {
+        max-width: 100%;
+        box-shadow: none;
+    }
+    
+    body {
+        background: white;
+        font-size: 12pt;
+    }
+}
+
+/* 11. COMPATIBILIDAD CON LECTORES DE PANTALLA */
+.sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+}
+
+/* 12. ESTILOS PARA BATERÍA BAJA (FUTURO) */
+@media (max-resolution: 1dppx) {
+    /* Estilos para pantallas de baja resolución */
+    .control-grid {
+        gap: 10px;
+    }
+    
+    .bell-btn, .stop-btn {
+        padding: 15px 10px;
+    }
+}
+
+/* 13. POLYFILL VISUAL PARA FLEXBOX GAP (IE11) */
+@supports not (gap: 10px) {
+    .control-grid {
+        margin: -7.5px;
+    }
+    
+    .control-grid > * {
+        margin: 7.5px;
+    }
+    
+    .bottom-nav {
+        padding: 12px 5px;
+    }
+    
+    .nav-item {
+        margin: 0 5px;
+    }
+}
+
+/* 14. MEJORAS PARA ALTA DENSIDAD DE PIXELES */
+@media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
+    .circle-logo {
+        border-width: 1.5px;
+    }
+    
+    #pin-input {
+        border-width: 1px;
+    }
+    
+    button {
+        border-width: 1px;
+    }
+}
+
+/* 15. ESTILOS DE CARGA (SPLASH SCREEN) */
+#splash-screen {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: var(--primary);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 9999;
+    transition: opacity 0.5s ease;
+}
+
+#splash-screen.hidden {
+    opacity: 0;
+    pointer-events: none;
+}
+
+.splash-logo {
+    width: 100px;
+    height: 100px;
+    animation: pulse 1.5s ease-in-out infinite;
+}
+
+/* 16. ESTILOS PARA WEB COMPONENTS (FUTURO) */
+:defined {
+    opacity: 1;
+    transition: opacity 0.3s ease;
+}
+
+:not(:defined) {
+    opacity: 0;
+}
+
+/* 17. MEJORAS DE PERFORMANCE */
+@media (prefers-reduced-data: reduce) {
+    .circle-logo,
+    .qr-img,
+    #app-icon {
+        background-image: none !important;
+    }
+    
+    * {
+        background-image: none !important;
+    }
+}
+
+/* 18. ESTILOS PARA CONTENIDO DINÁMICO */
+.content-placeholder {
+    background: linear-gradient(90deg, #F3F4F6 25%, #E5E7EB 50%, #F3F4F6 75%);
+    background-size: 200% 100%;
+    animation: loading 1.5s infinite;
+    border-radius: var(--radius);
+    min-height: 100px;
+}
+
+@keyframes loading {
+    0% { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
+}
+
+/* 19. ESTILOS PARA GESTOS TÁCTILES MEJORADOS */
+@media (pointer: coarse) {
+    .bell-btn,
+    .stop-btn,
+    .main-btn,
+    .nav-item {
+        min-height: 60px;
+        min-width: 60px;
+    }
+    
+    /* Mayor área táctil */
+    button::after {
+        content: "";
+        position: absolute;
+        top: -10px;
+        left: -10px;
+        right: -10px;
+        bottom: -10px;
+    }
+}
+
+/* 20. ESTILOS LEGACY PARA NAVEGADORES ANTIGUOS */
+@supports not (display: grid) {
+    .control-grid {
+        display: flex;
+        flex-direction: column;
+    }
+    
+    .control-grid button {
+        margin-bottom: 15px;
+    }
+    
+    @media (min-height: 700px) {
+        .control-grid {
+            flex-direction: row;
+            flex-wrap: wrap;
+        }
+        
+        .control-grid button {
+            flex: 1 0 45%;
+            margin: 7.5px;
+        }
+        
+        .control-grid button:nth-child(5),
+        .control-grid button:nth-child(6) {
+            flex: 1 0 100%;
+        }
+    }
+}
+
+/* ==========================================
+   FIN DE LAS MEJORAS PARA 20+ AÑOS
+   ========================================== */
