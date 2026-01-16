@@ -2,116 +2,153 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
     <meta name="theme-color" content="#5D4E37">
     <meta name="description" content="Sistema de Control de Campanas Parroquiales - Funciona 100% offline">
     
-    <!-- META TAG PARA BLUETOOTH -->
-    <meta name="bluetooth" content="lowEnergy">
-    
-    <!-- PWA Meta Tags MEJORADOS -->
+    <!-- PWA Meta Tags -->
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="Campanas">
     <meta name="application-name" content="Campanas Parroquiales">
     
-    <!-- iOS Icons MEJORADOS -->
+    <!-- iOS Icons -->
     <link rel="apple-touch-icon" href="icon-192.png">
     <link rel="apple-touch-icon" sizes="152x152" href="icon-192.png">
     <link rel="apple-touch-icon" sizes="180x180" href="icon-192.png">
     <link rel="apple-touch-icon" sizes="167x167" href="icon-192.png">
     
-    <!-- PRELOAD CRÍTICO COMPLETO con crossorigin para CORS -->
+    <!-- PRELOAD CRÍTICO -->
     <link rel="preload" href="style.css" as="style">
     <link rel="preload" href="app.js" as="script">
-    <link rel="preload" href="campana1.mp3" as="audio" type="audio/mpeg" crossorigin="anonymous">
-    <link rel="preload" href="campana2.mp3" as="audio" type="audio/mpeg" crossorigin="anonymous">
-    <link rel="preload" href="campana3.mp3" as="audio" type="audio/mpeg" crossorigin="anonymous">
-    <link rel="preload" href="emergencia.mp3" as="audio" type="audio/mpeg" crossorigin="anonymous">
-    <link rel="preload" href="instrucciones.pdf" as="document" type="application/pdf">
-    <link rel="preload" href="icon-192.png" as="image" type="image/png">
+    <link rel="preload" href="campana1.mp3" as="audio" type="audio/mpeg">
+    <link rel="preload" href="campana2.mp3" as="audio" type="audio/mpeg">
+    <link rel="preload" href="campana3.mp3" as="audio" type="audio/mpeg">
+    <link rel="preload" href="emergencia.mp3" as="audio" type="audio/mpeg">
     
     <title>Campanas Parroquiales - Control Offline</title>
     <link rel="stylesheet" href="style.css">
     <link rel="manifest" href="manifest.json">
-    <link rel="icon" href="icono.png" type="image/png">
+    <link rel="icon" href="icon-192.png" type="image/png">
     
-    <!-- Estilos optimizados para PWA offline -->
+    <!-- Estilos críticos inline para mejor rendimiento -->
     <style>
-        /* Indicador de estado offline - SIN TRANSFORM */
+        /* CRÍTICO: Prevenir zoom y mejorar touch */
+        * {
+            -webkit-tap-highlight-color: transparent;
+            -webkit-touch-callout: none;
+        }
+        
+        input, textarea, select, button {
+            font-size: 16px !important;
+            touch-action: manipulation;
+        }
+        
+        /* INPUT PIN - SIMPLIFICADO Y FUNCIONAL */
+        #pin-input {
+            width: 100%;
+            height: 65px;
+            font-size: 32px !important;
+            text-align: center;
+            margin: 20px 0;
+            border-radius: 15px;
+            border: 2px solid #8B7355;
+            background: #FFFFFF;
+            color: #5D4E37;
+            letter-spacing: 12px;
+            box-sizing: border-box;
+            font-weight: bold;
+            font-family: monospace;
+            outline: none;
+            -webkit-appearance: none;
+            appearance: none;
+        }
+        
+        #pin-input:focus {
+            border-color: #10B981;
+            box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.2);
+        }
+        
+        #pin-input.error {
+            border-color: #EF4444;
+            box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.2);
+            animation: shake 0.3s;
+        }
+        
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-10px); }
+            75% { transform: translateX(10px); }
+        }
+        
+        /* Ocultar flechas spinner */
+        #pin-input::-webkit-outer-spin-button,
+        #pin-input::-webkit-inner-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+        
+        #pin-input[type=number] {
+            -moz-appearance: textfield;
+        }
+        
+        /* Indicador offline */
         .offline-indicator {
             position: fixed;
-            top: 0;
+            top: -100px;
             left: 0;
             right: 0;
             background: linear-gradient(90deg, #10B981 0%, #059669 100%);
             color: white;
             text-align: center;
-            padding: 8px;
+            padding: 10px;
             font-size: 13px;
             font-weight: 600;
             z-index: 9998;
-            top: -100%; /* En lugar de transform: translateY(-100%) */
             transition: top 0.3s ease;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.15);
         }
         
         .offline-indicator.show {
-            top: 0; /* En lugar de transform: translateY(0) */
+            top: 0;
         }
         
         .offline-indicator.offline {
             background: linear-gradient(90deg, #F59E0B 0%, #D97706 100%);
         }
         
-        /* Notificación flotante - SIN TRANSFORM y SIN backdrop-filter */
+        /* Notificación flotante */
         .floating-notification {
             position: fixed;
-            bottom: -100px; /* En lugar de transform: translateY(100px) */
+            bottom: -100px;
             left: 50%;
             transform: translateX(-50%);
-            background: rgba(0, 0, 0, 0.9);
+            background: rgba(0, 0, 0, 0.92);
             color: white;
-            padding: 12px 20px;
+            padding: 14px 24px;
             border-radius: 12px;
             z-index: 9997;
             font-size: 14px;
             max-width: 85%;
             text-align: center;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
             transition: bottom 0.3s ease;
-            /* backdrop-filter: blur(10px); ELIMINADO - No soportado universalmente */
         }
         
         .floating-notification.show {
-            bottom: 100px; /* En lugar de transform: translateY(0) */
+            bottom: 100px;
         }
         
-        /* Mejoras para modo standalone */
+        /* Modo standalone */
         @media (display-mode: standalone) {
             body {
-                -webkit-touch-callout: none;
-                -webkit-user-select: none;
-                user-select: none;
                 overflow: hidden;
             }
             
-            /* Ocultar elementos de instalación cuando ya está instalado */
             .install-advice,
-            #install-container,
-            #install-advice {
+            #install-container {
                 display: none !important;
-            }
-            
-            /* Mejor padding para safe areas */
-            .screen {
-                padding-top: env(safe-area-inset-top, 20px) !important;
-                padding-bottom: env(safe-area-inset-bottom, 120px) !important;
-            }
-            
-            .bottom-nav {
-                bottom: calc(20px + env(safe-area-inset-bottom, 0px));
             }
         }
         
@@ -131,14 +168,14 @@
             color: #4A90E2;
             margin-top: 0;
             margin-bottom: 10px;
-            display: flex;
-            align-items: center;
+            font-size: 15px;
         }
         
         .bluetooth-step {
             margin: 8px 0;
             padding-left: 20px;
             position: relative;
+            line-height: 1.5;
         }
         
         .bluetooth-step:before {
@@ -147,6 +184,7 @@
             left: 5px;
             color: #4A90E2;
             font-weight: bold;
+            font-size: 16px;
         }
         
         .bluetooth-warning {
@@ -158,59 +196,10 @@
             font-size: 13px;
             color: #856404;
             font-weight: 600;
-        }
-        
-        /* Input PIN VISIBLE para personas mayores */
-        #pin-input {
-            width: 100%;
-            height: 65px;
-            font-size: 32px;
             text-align: center;
-            margin: 20px 0;
-            border-radius: 15px;
-            border: 2px solid #8B7355;
-            background: #FFFFFF;
-            color: #5D4E37;
-            letter-spacing: 12px;
-            box-sizing: border-box;
-            -webkit-appearance: none;
-            -moz-appearance: none;
-            appearance: none;
-            font-weight: bold;
-            font-family: monospace;
         }
         
-        /* Cambiado de type="password" a type="text" para mostrar números */
-        #pin-input::placeholder {
-            letter-spacing: normal;
-            color: #aaa;
-            font-weight: normal;
-            font-family: -apple-system, BlinkMacSystemFont, sans-serif;
-        }
-        
-        #pin-input:focus {
-            border-color: #10B981;
-            box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.2);
-            outline: none;
-        }
-        
-        #pin-input.error {
-            border-color: #EF4444;
-            box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.2);
-        }
-        
-        /* Ocultar flechas en navegadores */
-        #pin-input::-webkit-outer-spin-button,
-        #pin-input::-webkit-inner-spin-button {
-            -webkit-appearance: none;
-            margin: 0;
-        }
-        
-        #pin-input[type=number] {
-            -moz-appearance: textfield;
-        }
-        
-        /* Botón de instalación MEJORADO */
+        /* Consejo de instalación */
         .install-advice {
             background: #F0F9FF;
             border: 2px dashed #3B82F6;
@@ -220,12 +209,6 @@
             text-align: center;
             font-size: 14px;
             color: #1E40AF;
-            transition: all 0.3s ease;
-        }
-        
-        .install-advice:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 12px rgba(59, 130, 246, 0.15);
         }
         
         .install-advice p {
@@ -233,7 +216,6 @@
             font-weight: 600;
         }
         
-        /* Instrucciones específicas por navegador */
         .install-hints {
             background: #FEF3C7;
             border-radius: 8px;
@@ -247,59 +229,25 @@
         .install-hints span {
             display: block;
             margin: 3px 0;
+            line-height: 1.4;
         }
         
-        /* Animación de carga simplificada */
+        /* Loading simple */
         @keyframes pulse-simple {
             0%, 100% { opacity: 1; }
-            50% { opacity: 0.7; }
+            50% { opacity: 0.6; }
         }
         
         .loading {
             animation: pulse-simple 1.5s ease-in-out infinite;
         }
         
-        /* Mejoras de accesibilidad */
+        /* Reducir animaciones si el usuario lo prefiere */
         @media (prefers-reduced-motion: reduce) {
-            * {
+            *, *::before, *::after {
                 animation-duration: 0.01ms !important;
                 animation-iteration-count: 1 !important;
                 transition-duration: 0.01ms !important;
-            }
-            
-            .loading {
-                animation: none;
-                opacity: 0.8;
-            }
-        }
-        
-        /* Alto contraste */
-        @media (prefers-contrast: high) {
-            #pin-input {
-                border-width: 3px;
-            }
-            
-            button {
-                border: 2px solid #000000;
-            }
-        }
-        
-        /* Modo oscuro compatible */
-        @media (prefers-color-scheme: dark) {
-            .bluetooth-instructions {
-                background: #1E293B;
-                border-color: #3B82F6;
-                color: #E2E8F0;
-            }
-            
-            .install-advice {
-                background: #1E3A8A;
-                color: #DBEAFE;
-            }
-            
-            .install-hints {
-                background: #78350F;
-                color: #FDE68A;
             }
         }
     </style>
@@ -310,9 +258,9 @@
         <span id="offline-text">✅ Aplicación lista para funcionar offline</span>
     </div>
     
-    <!-- NOTIFICACIÓN FLOTANTE CON ARIA-LIVE -->
+    <!-- NOTIFICACIÓN FLOTANTE -->
     <div id="floating-notification" class="floating-notification" 
-         aria-live="polite" aria-atomic="true"></div>
+         role="alert" aria-live="polite" aria-atomic="true"></div>
     
     <div id="app-container">
         <!-- PANTALLA DE LOGIN -->
@@ -329,35 +277,43 @@
             </div>
             
             <div class="login-card">
-                <p>Ingrese el PIN</p>
+                <p style="font-size: 18px; font-weight: 600; margin-bottom: 10px;">Ingrese el PIN</p>
                 
-                <!-- INPUT CON TECLADO NATIVO VISIBLE para personas mayores -->
-                <input type="text"
-                       id="pin-input"
-                       inputmode="numeric"
-                       pattern="[0-9]*"
-                       maxlength="4"
-                       autocomplete="off"
-                       autofocus
-                       placeholder="____"
-                       oninput="validarPinInput(this)"
-                       aria-label="Ingrese el PIN de 4 dígitos">
+                <!-- INPUT PIN OPTIMIZADO PARA MÓVILES -->
+                <input 
+                    type="number"
+                    id="pin-input"
+                    inputmode="numeric"
+                    pattern="[0-9]*"
+                    maxlength="4"
+                    autocomplete="off"
+                    autofocus
+                    placeholder="____"
+                    aria-label="Ingrese el PIN de 4 dígitos"
+                    style="
+                        -webkit-user-select: text;
+                        -moz-user-select: text;
+                        -ms-user-select: text;
+                        user-select: text;
+                    ">
                 
-                <button class="main-btn" onclick="verificarAcceso()" aria-label="Verificar PIN e ingresar">
+                <button class="main-btn" onclick="verificarAcceso()" 
+                        aria-label="Verificar PIN e ingresar"
+                        style="margin-top: 15px;">
                     INGRESAR
                 </button>
                 
                 <!-- Indicador de estado -->
                 <div id="login-status" style="margin-top: 15px; font-size: 13px; color: #666; min-height: 18px;">
                     <span id="status-text"></span>
-                    <span id="status-loading" class="loading" style="display: none;">🔄 Verificando recursos...</span>
                 </div>
             </div>
             
             <!-- CONSEJO DE INSTALACIÓN EN LOGIN -->
             <div class="install-advice" id="install-advice">
                 <p>📱 ¿Usa esta app frecuentemente?</p>
-                <button class="install-btn" id="install-login-button" style="margin: 0 auto 10px auto;"
+                <button class="install-btn" id="install-login-button" 
+                        style="margin: 0 auto 10px auto;"
                         aria-label="Instalar aplicación en pantalla de inicio">
                     📲 INSTALAR APLICACIÓN
                 </button>
@@ -438,12 +394,7 @@
                 </button>
             </div>
 
-            <!-- ESTADO DE LA APLICACIÓN -->
-            <div id="app-status" class="status-bar" style="margin: 20px 0; display: none;">
-                <div id="status-content"></div>
-            </div>
-
-            <!-- BOTÓN DE INSTALACIÓN PWA MEJORADO (solo se muestra si no está instalado) -->
+            <!-- BOTÓN DE INSTALACIÓN PWA (solo si no está instalado) -->
             <div id="install-container" class="install-box">
                 <div class="install-advice">
                     <p>💡 Para acceso rápido y funcionamiento offline:</p>
@@ -470,7 +421,6 @@
                     <span>Ayuda</span>
                 </div>
                 
-                <!-- BOTÓN CONEXIÓN (AHORA INSTRUCCIONES) -->
                 <div class="nav-item" onclick="mostrarInstruccionesBluetooth()" 
                      id="bluetooth-help-btn" aria-label="Instrucciones de conexión Bluetooth">
                     <div class="circulo-bt-nav">📡</div>
@@ -484,14 +434,13 @@
             </div>
         </section>
 
-        <!-- PANTALLA DE CONFIGURACIÓN SIMPLIFICADA -->
+        <!-- PANTALLA DE CONFIGURACIÓN -->
         <section id="config-screen" class="screen hidden">
             <div class="config-header">
                 <button onclick="irAHome()" aria-label="Volver a pantalla principal">← Volver</button>
                 <h2>Configuración</h2>
             </div>
             
-            <!-- SOLO SEGURIDAD, SIN BLUETOOTH COMPLEJO -->
             <div class="config-card">
                 <h3>🔐 Gestión de Seguridad</h3>
                 <p>Cambio de PIN global (anti-robo). Requiere conexión a internet.</p>
@@ -575,17 +524,17 @@
         </div>
     </div>
 
-    <!-- MODALES PARA REEMPLAZAR alert() Y prompt() -->
-    <div id="custom-alert" class="modal-overlay hidden">
-        <div class="modal-content">
-            <p id="alert-message"></p>
+    <!-- MODALES PERSONALIZADOS (reemplazan alert/prompt) -->
+    <div id="custom-alert" class="modal-overlay hidden" style="z-index: 10000;">
+        <div class="modal-content" style="max-width: 350px;">
+            <p id="alert-message" style="white-space: pre-wrap; line-height: 1.6; text-align: left;"></p>
             <button class="main-btn" onclick="cerrarAlert()" style="margin-top: 20px;">OK</button>
         </div>
     </div>
 
-    <div id="custom-prompt" class="modal-overlay hidden">
-        <div class="modal-content">
-            <p id="prompt-message"></p>
+    <div id="custom-prompt" class="modal-overlay hidden" style="z-index: 10000;">
+        <div class="modal-content" style="max-width: 350px;">
+            <p id="prompt-message" style="white-space: pre-wrap; line-height: 1.6; text-align: left;"></p>
             <input type="text" id="prompt-input" style="
                 width: 100%;
                 padding: 12px;
@@ -602,37 +551,35 @@
         </div>
     </div>
 
-    <!-- SCRIPTS CRÍTICOS - Optimizados para PWA -->
+    <!-- SCRIPT DE INICIALIZACIÓN INLINE -->
     <script>
-        // Script de inicialización mejorado para PWA offline
+        // Inicialización inmediata para PWA
         (function() {
-            console.log('🔔 Campanas Parroquiales - Iniciando en modo PWA');
+            console.log('🔔 Campanas Parroquiales v1.0.0 - Iniciando');
             
-            // Detectar si estamos en modo standalone (ya instalado)
+            // Detectar modo standalone
             const isStandalone = window.matchMedia('(display-mode: standalone)').matches || 
                                 window.navigator.standalone === true;
             
-            // Actualizar título si está instalado
             if (isStandalone) {
-                document.title = 'Campanas (Offline)';
-                console.log('📱 Modo standalone detectado - Aplicación instalada');
+                console.log('📱 Modo standalone detectado');
+                document.title = 'Campanas';
                 
                 // Ocultar elementos de instalación
                 setTimeout(() => {
-                    const installElements = document.querySelectorAll('.install-advice, #install-container');
-                    installElements.forEach(el => {
-                        if (el) el.style.display = 'none';
+                    const hideElements = ['.install-advice', '#install-container', '#install-advice'];
+                    hideElements.forEach(sel => {
+                        const els = document.querySelectorAll(sel);
+                        els.forEach(el => el.style.display = 'none');
                     });
                 }, 100);
             }
             
-            // Verificar conexión inicial
+            // Función para actualizar estado online/offline
             function updateOnlineStatus() {
                 const online = navigator.onLine;
                 const indicator = document.getElementById('offline-indicator');
                 const offlineText = document.getElementById('offline-text');
-                const onlineStatus = document.getElementById('online-status');
-                const offlineStatus = document.getElementById('offline-status');
                 
                 if (indicator && offlineText) {
                     if (online) {
@@ -643,14 +590,13 @@
                         offlineText.textContent = '📴 Funcionando en modo offline';
                     }
                     
-                    // Mostrar indicador brevemente
                     indicator.classList.add('show');
-                    setTimeout(() => {
-                        indicator.classList.remove('show');
-                    }, 3000);
+                    setTimeout(() => indicator.classList.remove('show'), 3000);
                 }
                 
                 // Actualizar en pantalla principal
+                const onlineStatus = document.getElementById('online-status');
+                const offlineStatus = document.getElementById('offline-status');
                 if (onlineStatus && offlineStatus) {
                     if (online) {
                         onlineStatus.style.display = 'inline';
@@ -662,43 +608,39 @@
                 }
             }
             
-            // Inicializar estado de conexión
+            // Inicializar estado
             updateOnlineStatus();
             window.addEventListener('online', updateOnlineStatus);
             window.addEventListener('offline', updateOnlineStatus);
             
-            // Registrar Service Worker para PWA offline
+            // Registrar Service Worker
             if ('serviceWorker' in navigator) {
-                // Esperar a que la página cargue completamente
                 window.addEventListener('load', function() {
-                    // Registrar con estrategia agresiva
                     navigator.serviceWorker.register('sw.js', {
                         scope: './',
                         updateViaCache: 'none'
                     })
                     .then(function(registration) {
-                        console.log('✅ Service Worker registrado exitosamente:', registration.scope);
+                        console.log('✅ Service Worker registrado:', registration.scope);
                         
-                        // Forzar actualización si hay conexión
                         if (navigator.onLine) {
                             registration.update();
                         }
                         
-                        // Verificar si hay una nueva versión esperando
                         if (registration.waiting) {
-                            console.log('🔄 Nueva versión del Service Worker esperando');
-                            mostrarNotificacion('Nueva versión disponible. Recargue para actualizar.');
+                            console.log('🔄 Nueva versión esperando');
                         }
                         
-                        // Escuchar actualizaciones
                         registration.addEventListener('updatefound', function() {
-                            console.log('🔄 Nueva versión del Service Worker encontrada');
+                            console.log('🔄 Nueva versión encontrada');
                             const newWorker = registration.installing;
                             
                             newWorker.addEventListener('statechange', function() {
                                 if (this.state === 'installed' && navigator.serviceWorker.controller) {
-                                    console.log('✨ Nueva versión instalada - Lista para activar');
-                                    mostrarNotificacion('Actualización lista. Recargue para aplicar cambios.');
+                                    console.log('✨ Nueva versión lista');
+                                    if (window.mostrarNotificacion) {
+                                        window.mostrarNotificacion('Actualización disponible. Recargue la página.');
+                                    }
                                 }
                             });
                         });
@@ -707,12 +649,11 @@
                         console.error('❌ Error registrando Service Worker:', error);
                     });
                 });
-            } else {
-                console.warn('⚠️ Service Worker no soportado - La aplicación funcionará en modo online');
             }
             
-            // Función para mostrar notificaciones flotantes
-            window.mostrarNotificacion = function(mensaje, duracion = 3000) {
+            // Función global de notificaciones
+            window.mostrarNotificacion = function(mensaje, duracion) {
+                duracion = duracion || 3000;
                 const notification = document.getElementById('floating-notification');
                 if (notification) {
                     notification.textContent = mensaje;
@@ -726,7 +667,7 @@
                 }
             };
             
-            // Función para verificar estado del Service Worker
+            // Verificar estado del Service Worker
             window.verificarEstadoSW = function() {
                 if ('serviceWorker' in navigator) {
                     navigator.serviceWorker.getRegistration().then(registration => {
@@ -737,14 +678,12 @@
                                 swStatus.style.color = '#10B981';
                             }
                             
-                            // Verificar cache
                             if ('caches' in window) {
-                                caches.open('campanas-pwav1').then(cache => {
+                                caches.open('campanas-pwa-v1.0.0').then(cache => {
                                     cache.keys().then(keys => {
                                         const cacheStatus = document.getElementById('cache-status');
                                         if (cacheStatus) {
-                                            const total = keys.length;
-                                            cacheStatus.textContent = `✅ ${total} archivos cacheados`;
+                                            cacheStatus.textContent = `✅ ${keys.length} archivos`;
                                             cacheStatus.style.color = '#10B981';
                                         }
                                     });
@@ -761,7 +700,7 @@
                 }
             };
             
-            // Función para recachear recursos
+            // Recachear recursos
             window.recachearRecursosFaltantes = function() {
                 if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
                     navigator.serviceWorker.controller.postMessage({
@@ -777,7 +716,7 @@
                 }
             };
             
-            // Función para forzar actualización
+            // Forzar actualización
             window.forzarActualizacionSW = function() {
                 if ('serviceWorker' in navigator) {
                     navigator.serviceWorker.getRegistration().then(registration => {
@@ -793,24 +732,68 @@
                 }
             };
             
-            // Mostrar notificación de bienvenida
-            setTimeout(() => {
-                if (isStandalone) {
-                    mostrarNotificacion('✅ Aplicación instalada - Lista para uso offline');
+            // Validar input PIN
+            window.validarPinInput = function(input) {
+                // Solo números
+                let valor = input.value.replace(/[^0-9]/g, '');
+                
+                // Limitar a 4 dígitos
+                if (valor.length > 4) {
+                    valor = valor.slice(0, 4);
                 }
-            }, 1500);
+                
+                input.value = valor;
+                
+                // Cambiar estilo cuando esté completo
+                if (valor.length === 4) {
+                    input.style.borderColor = '#10B981';
+                    input.style.boxShadow = '0 0 0 3px rgba(16, 185, 129, 0.2)';
+                    input.classList.remove('error');
+                } else {
+                    input.style.borderColor = '#8B7355';
+                    input.style.boxShadow = 'none';
+                    input.classList.remove('error');
+                }
+            };
             
-            console.log('✅ Sistema de inicialización PWA cargado');
+            // Configurar input PIN al cargar
+            setTimeout(() => {
+                const pinInput = document.getElementById('pin-input');
+                if (pinInput) {
+                    // Enfocar automáticamente
+                    pinInput.focus();
+                    
+                    // Agregar validación en tiempo real
+                    pinInput.addEventListener('input', function() {
+                        validarPinInput(this);
+                    });
+                    
+                    // Enter para enviar
+                    pinInput.addEventListener('keypress', function(e) {
+                        if (e.key === 'Enter') {
+                            e.preventDefault();
+                            if (window.verificarAcceso) {
+                                verificarAcceso();
+                            }
+                        }
+                    });
+                    
+                    // Prevenir paste de texto no numérico
+                    pinInput.addEventListener('paste', function(e) {
+                        e.preventDefault();
+                        const text = (e.clipboardData || window.clipboardData).getData('text');
+                        const numbers = text.replace(/[^0-9]/g, '').slice(0, 4);
+                        this.value = numbers;
+                        validarPinInput(this);
+                    });
+                }
+            }, 300);
+            
+            console.log('✅ Sistema de inicialización cargado');
         })();
     </script>
     
-    <!-- Script principal con integridad (si tienes el hash) -->
-    <!-- 
-    <script src="app.js" defer crossorigin="anonymous" 
-            integrity="sha384-...tu-hash-aquí..."></script>
-    -->
-    
-    <!-- Versión temporal sin integrity (generar hash después) -->
-    <script src="app.js" defer crossorigin="anonymous"></script>
+    <!-- Script principal -->
+    <script src="app.js" defer></script>
 </body>
 </html>
