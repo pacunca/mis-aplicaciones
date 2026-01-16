@@ -206,7 +206,8 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }, 300);
     
-    setTimeout(verificarRecursosOffline, 2000);
+    // SOLO verificar recursos si el usuario hace clic en el botón
+    // NO verificar automáticamente al abrir
     
     if (ES_DESARROLLO) {
         setTimeout(verificarArchivosAudio, 1000);
@@ -354,9 +355,9 @@ function verificarRecursosOffline() {
                 log('✅ Recursos offline verificados');
                 recursosOfflineVerificados = true;
                 
-                if (window.matchMedia('(display-mode: standalone)').matches) {
-                    mostrarNotificacion('✅ Aplicación lista para uso offline');
-                }
+                // SOLO mostrar si el usuario presionó el botón manualmente
+                // NO mostrar automáticamente al abrir la app
+                
             } else {
                 warn('⚠️ Solo', totalCacheado, '/', totalEsperado, 'recursos en cache');
                 
@@ -1028,7 +1029,7 @@ function detenerSonido() {
         audioActual = null;
         
         log('⏹️ Sonido detenido correctamente');
-        mostrarNotificacion('Sonido detenido');
+        // SOLO mostrar notificación si realmente había audio sonando
         
     } catch (err) {
         // Si todo falla, forzar eliminación
