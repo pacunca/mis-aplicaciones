@@ -1,28 +1,16 @@
 {
-  "id": "/campanas-parroquiales/?v=1.0.0",
+  "id": "campanas-parroquiales-v1",
   "name": "Campanas Parroquiales",
   "short_name": "Campanas",
   "description": "Sistema de Control de Campanas para templos religiosos - Funciona 100% offline",
-  "start_url": "./index.html?v=1.0.0",
+  "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",
-  "display_override": ["standalone", "minimal-ui", "window-controls-overlay"],
+  "display_override": ["standalone", "minimal-ui"],
   "orientation": "portrait",
   "background_color": "#FAF7F0",
   "theme_color": "#5D4E37",
   "icons": [
-    {
-      "src": "./icon-192.png",
-      "sizes": "192x192",
-      "type": "image/png",
-      "purpose": "any maskable"
-    },
-    {
-      "src": "./icon-512.png",
-      "sizes": "512x512",
-      "type": "image/png",
-      "purpose": "any maskable"
-    },
     {
       "src": "./icon-96.png",
       "sizes": "96x96",
@@ -42,6 +30,12 @@
       "purpose": "any maskable"
     },
     {
+      "src": "./icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
       "src": "./icon-256.png",
       "sizes": "256x256",
       "type": "image/png",
@@ -50,6 +44,12 @@
     {
       "src": "./icon-384.png",
       "sizes": "384x384",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "./icon-512.png",
+      "sizes": "512x512",
       "type": "image/png",
       "purpose": "any maskable"
     },
@@ -67,82 +67,52 @@
       "type": "image/png",
       "form_factor": "narrow",
       "label": "Pantalla de login de Campanas Parroquiales"
-    },
-    {
-      "src": "./screenshot-tablet.png",
-      "sizes": "1280x720",
-      "type": "image/png",
-      "form_factor": "wide",
-      "label": "Pantalla principal de control de campanas"
     }
   ],
   "categories": ["utilities", "productivity", "music"],
   "lang": "es",
   "dir": "ltr",
-  "protocol_handlers": [
-    {
-      "protocol": "web+campanas",
-      "url": "/?campana=%s"
-    }
-  ],
-  "edge_side_panel": {
-    "preferred_width": 400
-  },
-  "permissions": ["bluetooth", "storage", "notifications"],
   "shortcuts": [
     {
       "name": "Primer Toque",
       "short_name": "Toque 1",
       "description": "Activar primer toque de campana",
       "url": "./index.html?toque=1",
-      "icons": [{ "src": "./icon-96.png", "sizes": "96x96" }]
-    },
-    {
-      "name": "Alerta de Emergencia",
-      "short_name": "Emergencia",
-      "description": "Activar alarma de emergencia",
-      "url": "./index.html?emergencia=1",
-      "icons": [{ "src": "./icon-96.png", "sizes": "96x96" }]
-    },
-    {
-      "name": "Configuración",
-      "short_name": "Config",
-      "description": "Abrir configuración de la aplicación",
-      "url": "./index.html?config=1",
-      "icons": [{ "src": "./icon-96.png", "sizes": "96x96" }]
-    }
-  ],
-  "handle_links": "preferred",
-  "launch_handler": {
-    "client_mode": "focus-existing"
-  },
-  "file_handlers": [
-    {
-      "action": "./index.html",
-      "accept": {
-        "audio/mpeg": [".mp3"]
-      },
       "icons": [
         {
           "src": "./icon-96.png",
           "sizes": "96x96",
           "type": "image/png"
         }
-      ],
-      "launch_type": "single-client"
+      ]
+    },
+    {
+      "name": "Alerta de Emergencia",
+      "short_name": "Emergencia",
+      "description": "Activar alarma de emergencia",
+      "url": "./index.html?emergencia=1",
+      "icons": [
+        {
+          "src": "./icon-96.png",
+          "sizes": "96x96",
+          "type": "image/png"
+        }
+      ]
+    },
+    {
+      "name": "Configuración",
+      "short_name": "Config",
+      "description": "Abrir configuración de la aplicación",
+      "url": "./index.html?config=1",
+      "icons": [
+        {
+          "src": "./icon-96.png",
+          "sizes": "96x96",
+          "type": "image/png"
+        }
+      ]
     }
   ],
-  "share_target": {
-    "action": "./index.html",
-    "method": "GET",
-    "enctype": "application/x-www-form-urlencoded",
-    "params": {
-      "title": "name",
-      "text": "description",
-      "url": "link"
-    }
-  },
-  "capture_links": "existing-client-navigate",
-  "related_applications": [],
-  "prefer_related_applications": false
+  "prefer_related_applications": false,
+  "related_applications": []
 }
