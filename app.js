@@ -987,21 +987,53 @@ function confirmarEmergencia() {
 }
 
 function detenerSonido() {
-    if (audioActual) {
-        try {
+    if (!audioActual) {
+        log('No hay audio para detener');
+        return;
+    }
+    
+    try {
+        // PRIMERO: Pausar inmediatamente
+        if (!audioActual.paused) {
             audioActual.pause();
-            audioActual.currentTime = 0;
-            audioActual.src = '';
-            
-            if (audioActual.src.indexOf('blob:') === 0) {
-                URL.revokeObjectURL(audioActual.src);
-            }
-            
-            audioActual = null;
-            log('⏹️ Sonido detenido');
-        } catch (err) {
-            warn('Advertencia al detener sonido:', err);
         }
+        
+        // SEGUNDO: Resetear tiempo
+        try {
+            audioActual.currentTime = 0;
+        } catch (e) {
+            // Algunos navegadores fallan aquí, continuar
+        }
+        
+        // TERCERO: Liberar recursos blob si existe
+        var srcOriginal = audioActual.src;
+        if (srcOriginal && srcOriginal.indexOf('blob:') === 0) {
+            try {
+                URL.revokeObjectURL(srcOriginal);
+            } catch (e) {
+                // Silenciar error de revoke
+            }
+        }
+        
+        // CUARTO: Limpiar src
+        audioActual.src = '';
+        audioActual.load(); // Forzar limpieza
+        
+        // QUINTO: Remover eventos
+        audioActual.onended = null;
+        audioActual.onerror = null;
+        audioActual.oncanplaythrough = null;
+        
+        // SEXTO: Eliminar referencia
+        audioActual = null;
+        
+        log('⏹️ Sonido detenido correctamente');
+        mostrarNotificacion('Sonido detenido');
+        
+    } catch (err) {
+        // Si todo falla, forzar eliminación
+        error('Error deteniendo sonido:', err);
+        audioActual = null;
     }
 }
 
