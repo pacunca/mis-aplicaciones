@@ -1,5 +1,11 @@
 /* ==========================================
-   VARIABLES Y CONFIGURACIÓN GLOBAL
+   CAMPANAS PARROQUIALES - ESTILOS v1.0.0
+   Diseñado para durar 20+ años
+   Colores y estructura ORIGINALES respetados
+   ========================================== */
+
+/* ==========================================
+   VARIABLES CSS (con fallbacks)
    ========================================== */
 :root {
     --primary: #5D4E37;
@@ -17,19 +23,8 @@
     --warning-yellow: #FFF3CD;
 }
 
-/* POLYFILL PARA FLEXBOX GAP (para IE11/navegadores antiguos) */
-@supports not (gap: 10px) {
-  .control-grid {
-    margin: -7.5px;
-  }
-  
-  .control-grid > * {
-    margin: 7.5px;
-  }
-}
-
 /* ==========================================
-   RESET Y BASE RESPONSIVA
+   RESET Y BASE
    ========================================== */
 * {
     box-sizing: border-box;
@@ -39,14 +34,12 @@
 body {
     margin: 0;
     padding: 0;
-    background-color: #FAF7F0; /* Fallback para navegadores sin variables CSS */
-    background-color: var(--bg);
+    background-color: #FAF7F0;
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen-Sans, Ubuntu, Cantarell, sans-serif;
     display: flex;
     justify-content: center;
     align-items: flex-start;
     min-height: 100vh;
-    min-height: 100dvh; /* Nueva unidad estándar */
     overflow-x: hidden;
 }
 
@@ -54,10 +47,8 @@ body {
     width: 100%;
     max-width: 480px;
     min-height: 100vh;
-    min-height: 100dvh; /* Nueva unidad estándar */
     position: relative;
-    background: #FAF7F0; /* Fallback para navegadores sin variables CSS */
-    background: var(--bg);
+    background: #FAF7F0;
     box-shadow: 0 0 20px rgba(0, 0, 0, 0.05);
 }
 
@@ -67,14 +58,12 @@ body {
 .screen {
     padding: 20px;
     min-height: 100vh;
-    min-height: 100dvh; /* Nueva unidad estándar */
     display: flex;
     flex-direction: column;
     overflow-y: auto;
-    padding-bottom: 120px; /* Espacio para navegación inferior */
+    padding-bottom: 120px;
 }
 
-/* Ocultar scrollbar pero permitir scroll */
 .screen::-webkit-scrollbar {
     display: none;
 }
@@ -84,8 +73,12 @@ body {
     scrollbar-width: none;
 }
 
+.hidden {
+    display: none !important;
+}
+
 /* ==========================================
-   PANTALLA DE LOGIN
+   LOGO Y HEADER
    ========================================== */
 .logo-area {
     text-align: center;
@@ -97,81 +90,75 @@ body {
 .circle-logo {
     width: 140px;
     height: 140px;
-    background: #5D4E37; /* Fallback para navegadores sin variables CSS */
-    background: var(--primary);  /* Fondo marrón */
+    background: #5D4E37;
     border-radius: 50%;
     margin: 0 auto 20px auto;
-    border: 3px solid #5D4E37; /* Fallback para navegadores sin variables CSS */
-    border: 3px solid var(--primary);
+    border: 3px solid #5D4E37;
     overflow: hidden;
     display: flex;
     justify-content: center;
     align-items: center;
-    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1); /* Fallback para navegadores sin variables CSS */
-    box-shadow: var(--shadow);
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
     position: relative;
 }
 
-#app-icon {
-    width: 120%;  /* Más grande que el contenedor */
-    height: 120%; /* Más grande que el contenedor */
-    object-fit: cover;  /* Cubre todo, puede recortar */
+#app-icon,
+.home-icon {
+    width: 120%;
+    height: 120%;
+    object-fit: cover;
     position: absolute;
     top: 50%;
     left: 50%;
-    transform: translate(-50%, -50%); /* Centrado perfecto */
+    transform: translate(-50%, -50%);
 }
 
 .logo-area h1 {
-    color: #5D4E37; /* Fallback para navegadores sin variables CSS */
-    color: var(--primary);
+    color: #5D4E37;
     margin: 0;
     font-size: 1.8em;
     font-weight: 700;
 }
 
 .subtitle {
-    color: #8B7355; /* Fallback para navegadores sin variables CSS */
-    color: var(--primary-light);
+    color: #8B7355;
     margin: 5px 0 0 0;
     font-size: 1em;
     font-weight: 400;
 }
 
+/* ==========================================
+   CARDS (LOGIN Y CONFIG)
+   ========================================== */
 .login-card,
 .config-card {
-    background: #FFFFFF; /* Fallback para navegadores sin variables CSS */
-    background: var(--white);
+    background: #FFFFFF;
     padding: 25px;
-    border-radius: 18px; /* Fallback para navegadores sin variables CSS */
-    border-radius: var(--radius);
-    border: 1.5px solid #8B7355; /* Fallback para navegadores sin variables CSS */
-    border: 1.5px solid var(--primary-light);
-    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1); /* Fallback para navegadores sin variables CSS */
-    box-shadow: var(--shadow);
+    border-radius: 18px;
+    border: 1.5px solid #8B7355;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
     text-align: center;
     flex-shrink: 0;
 }
 
-/* CORRECCIÓN: Cambiado #pin-display-input por #pin-input para coincidir con HTML */
+/* ==========================================
+   INPUT PIN (RESPETANDO DISEÑO ORIGINAL)
+   ========================================== */
 #pin-input {
     width: 100%;
     height: 65px;
-    font-size: 32px;
+    font-size: 32px !important;
     text-align: center;
     margin: 20px 0;
     border-radius: 15px;
-    border: 2px solid #8B7355; /* Fallback para navegadores sin variables CSS */
-    border: 2px solid var(--primary-light);
-    background: #FFFFFF; /* Fallback para navegadores sin variables CSS */
-    background: var(--white);
-    color: #5D4E37; /* Fallback para navegadores sin variables CSS */
-    color: var(--primary);
+    border: 2px solid #8B7355;
+    background: #FFFFFF;
+    color: #5D4E37;
     letter-spacing: 12px;
     box-sizing: border-box;
     font-weight: bold;
-    caret-color: #5D4E37; /* Fallback para navegadores sin variables CSS */
-    caret-color: var(--primary);
+    font-family: monospace;
+    caret-color: #5D4E37;
     outline: none;
     -webkit-appearance: none;
     -moz-appearance: none;
@@ -182,28 +169,36 @@ body {
     letter-spacing: normal;
     color: #aaa;
     font-weight: normal;
+    font-family: -apple-system, BlinkMacSystemFont, sans-serif;
 }
 
 #pin-input:focus {
-    border-color: #10B981; /* Fallback para navegadores sin variables CSS */
-    border-color: var(--success);
+    border-color: #10B981;
     box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.2);
 }
 
 #pin-input.error {
-    border-color: #EF4444; /* Fallback para navegadores sin variables CSS */
-    border-color: var(--danger);
+    border-color: #EF4444;
     box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.2);
 }
 
+#pin-input::-webkit-outer-spin-button,
+#pin-input::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+
+#pin-input[type=number] {
+    -moz-appearance: textfield;
+}
+
 /* ==========================================
-   PANTALLA PRINCIPAL - HEADER Y ESTADO
+   HEADER CONTROL (PANTALLA PRINCIPAL)
    ========================================== */
 .header-control {
     text-align: center;
     margin: 15px 0 20px 0;
-    color: #5D4E37; /* Fallback para navegadores sin variables CSS */
-    color: var(--primary);
+    color: #5D4E37;
     flex-shrink: 0;
 }
 
@@ -213,27 +208,246 @@ body {
     font-weight: 700;
 }
 
-.status-bar {
-    padding: 14px 16px;
-    background: #FFF3CD; /* Fallback para navegadores sin variables CSS */
-    background: var(--warning-yellow);
-    color: #856404;
-    border-radius: 12px;
-    text-align: center;
-    margin-bottom: 15px;
-    font-weight: 600;
-    font-size: 15px;
-    border: 1px solid rgba(0, 0, 0, 0.05);
-    flex-shrink: 0;
+/* ==========================================
+   GRID DE CONTROL (BOTONES CAMPANAS)
+   ========================================== */
+.control-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 15px;
+    margin-bottom: 20px;
+    flex: 1;
+}
+
+@supports not (display: grid) {
+    .control-grid {
+        display: flex;
+        flex-direction: column;
+    }
+    
+    .control-grid button {
+        margin-bottom: 15px;
+    }
+}
+
+@media (min-height: 700px) {
+    .control-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    
+    .control-grid button:nth-child(5) {
+        grid-column: span 2;
+    }
 }
 
 /* ==========================================
-   INSTRUCCIONES BLUETOOTH (NUEVO)
+   BOTONES PRINCIPALES (RESPETANDO COLORES)
+   ========================================== */
+.main-btn,
+.bell-btn,
+.stop-btn,
+.install-btn {
+    width: 100%;
+    padding: 22px 10px;
+    border-radius: 18px;
+    font-size: 18px;
+    font-weight: 700;
+    border: none;
+    cursor: pointer;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    transition: all 0.2s ease;
+    min-height: 70px;
+}
+
+.main-btn:active,
+.bell-btn:active,
+.stop-btn:active,
+.install-btn:active {
+    transform: scale(0.97);
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.15);
+}
+
+/* BOTONES CAMPANA - Degradado marrón original */
+.main-btn,
+.bell-btn {
+    background: linear-gradient(180deg, #8B7355 0%, #5D4E37 100%);
+    color: #FFFFFF;
+}
+
+.main-btn:hover,
+.bell-btn:hover {
+    opacity: 0.95;
+}
+
+/* BOTÓN EMERGENCIA - Rojo intenso original */
+.emergency-btn {
+    background: linear-gradient(180deg, #DC2626 0%, #B91C1C 100%) !important;
+    color: #FFFFFF !important;
+    font-weight: 800;
+}
+
+/* BOTÓN DETENER - Amarillo/naranja original */
+.stop-btn {
+    background: #F59E0B !important;
+    color: #5D4E37 !important;
+    font-weight: 800;
+}
+
+/* BOTÓN INSTALAR - Verde */
+.install-btn {
+    background: linear-gradient(180deg, #10B981 0%, #059669 100%);
+    color: white;
+    font-size: 17px;
+    padding: 18px;
+}
+
+.outline-btn {
+    background: transparent;
+    border: 2px solid #8B7355;
+    color: #5D4E37;
+    padding: 18px;
+    border-radius: 18px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    width: 100%;
+    margin-top: 10px;
+}
+
+.outline-btn:active {
+    background: #8B7355;
+    color: white;
+}
+
+/* ==========================================
+   NAVEGACIÓN INFERIOR (3 BOTONES)
+   ========================================== */
+.bottom-nav {
+    position: fixed;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: calc(100% - 40px);
+    max-width: 440px;
+    background: #FFFFFF;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 15px;
+    border-radius: 25px;
+    border: 1.5px solid #D7D0C8;
+    box-shadow: 0 -5px 20px rgba(0, 0, 0, 0.1);
+    z-index: 1000;
+}
+
+.nav-item {
+    cursor: pointer;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    color: #5D4E37;
+    font-size: 13px;
+    font-weight: 600;
+    min-width: 65px;
+    flex: 1;
+    transition: all 0.2s ease;
+}
+
+.nav-item:active {
+    transform: scale(0.95);
+}
+
+/* Botón Ayuda (JL) - Círculo blanco con borde negro */
+.circulo-jl-nav {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    background-color: #FFFFFF;
+    border: 3px solid #000000;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    color: #000000;
+    font-family: 'Monotype Corsiva', 'Apple Chancery', cursive;
+    font-size: 1.8em;
+    margin-bottom: 4px;
+}
+
+/* Botón Bluetooth - Círculo marrón con emoji */
+.circulo-bt-nav {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    background: linear-gradient(180deg, #8B7355 0%, #5D4E37 100%);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    color: #FFFFFF;
+    font-size: 1.5em;
+    margin-bottom: 4px;
+    transition: all 0.3s ease;
+    box-shadow: 0 3px 8px rgba(0, 0, 0, 0.15);
+}
+
+/* Botón Admin - Píldora oscura */
+.admin-pill {
+    background: #444;
+    color: #FFFFFF !important;
+    border-radius: 12px;
+    padding: 10px 15px !important;
+    font-weight: 700;
+    font-size: 14px;
+    min-height: 50px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0;
+}
+
+/* ==========================================
+   CONFIGURACIÓN
+   ========================================== */
+.config-header {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    margin-bottom: 25px;
+    flex-shrink: 0;
+}
+
+.config-header button {
+    background: none;
+    border: 2px solid #8B7355;
+    color: #5D4E37;
+    padding: 10px 15px;
+    border-radius: 10px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.config-header button:active {
+    background: #8B7355;
+    color: white;
+}
+
+.config-header h2 {
+    margin: 0;
+    color: #5D4E37;
+    font-size: 1.5em;
+}
+
+/* ==========================================
+   INSTRUCCIONES BLUETOOTH
    ========================================== */
 .bluetooth-instructions {
     background: #E8F4FD;
-    border: 2px solid #4A90E2; /* Fallback para navegadores sin variables CSS */
-    border: 2px solid var(--info-blue);
+    border: 2px solid #4A90E2;
     border-radius: 12px;
     padding: 15px;
     margin: 15px 0;
@@ -244,8 +458,7 @@ body {
 }
 
 .bluetooth-instructions h4 {
-    color: #4A90E2; /* Fallback para navegadores sin variables CSS */
-    color: var(--info-blue);
+    color: #4A90E2;
     margin-top: 0;
     margin-bottom: 10px;
     display: flex;
@@ -265,15 +478,13 @@ body {
     content: "•";
     position: absolute;
     left: 5px;
-    color: #4A90E2; /* Fallback para navegadores sin variables CSS */
-    color: var(--info-blue);
+    color: #4A90E2;
     font-weight: bold;
     font-size: 16px;
 }
 
 .bluetooth-warning {
-    background: #FFF3CD; /* Fallback para navegadores sin variables CSS */
-    background: var(--warning-yellow);
+    background: #FFF3CD;
     border: 1px solid #FFEAA7;
     border-radius: 8px;
     padding: 10px;
@@ -285,7 +496,7 @@ body {
 }
 
 /* ==========================================
-   NUEVOS ESTILOS PARA INSTALACIÓN PWA
+   INSTALACIÓN PWA
    ========================================== */
 .install-advice {
     background: #F0F9FF;
@@ -320,272 +531,13 @@ body {
     line-height: 1.4;
 }
 
-/* ==========================================
-   GRID DE CONTROL DE CAMPANAS (RESPONSIVO)
-   ========================================== */
-@supports not (display: grid) {
-  .control-grid {
-    display: flex;
-    flex-wrap: wrap;
-  }
-}
-
-.control-grid {
-    display: grid;
-    grid-template-columns: 1fr;
-    gap: 15px;
-    margin-bottom: 20px;
-    flex: 1;
-}
-
-@media (min-height: 700px) {
-    .control-grid {
-        grid-template-columns: repeat(2, 1fr);
-    }
-    
-    .control-grid button:nth-child(5),
-    .control-grid button:nth-child(6) {
-        grid-column: span 2;
-    }
-}
-
-/* ==========================================
-   BOTONES DE ACCIÓN (UNIVERSALES)
-   ========================================== */
-.main-btn,
-.bell-btn,
-.stop-btn,
-.install-btn {
-    width: 100%;
-    padding: 22px 10px;
-    border-radius: 18px; /* Fallback para navegadores sin variables CSS */
-    border-radius: var(--radius);
-    font-size: 18px;
-    font-weight: 700;
-    border: none;
-    cursor: pointer;
-    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1); /* Fallback para navegadores sin variables CSS */
-    box-shadow: var(--shadow);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 10px;
-    transition: all 0.2s ease;
-    min-height: 70px;
-}
-
-.main-btn:active,
-.bell-btn:active,
-.stop-btn:active,
-.install-btn:active {
-    transform: scale(0.97);
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.15);
-}
-
-.main-btn,
-.bell-btn {
-    background: linear-gradient(180deg, #8B7355 0%, #5D4E37 100%); /* Fallback para navegadores sin variables CSS */
-    background: linear-gradient(180deg, var(--primary-light) 0%, var(--primary) 100%);
-    color: #FFFFFF; /* Fallback para navegadores sin variables CSS */
-    color: var(--white);
-}
-
-.main-btn:hover,
-.bell-btn:hover {
-    opacity: 0.95;
-}
-
-.emergency-btn {
-    background: linear-gradient(180deg, #DC2626 0%, #B91C1C 100%) !important; /* Fallback para navegadores sin variables CSS */
-    background: linear-gradient(180deg, var(--emergency) 0%, #B91C1C 100%) !important;
-    color: #FFFFFF !important; /* Fallback para navegadores sin variables CSS */
-    color: var(--white) !important;
-    font-weight: 800;
-}
-
-.stop-btn {
-    background: #F59E0B !important; /* Fallback para navegadores sin variables CSS */
-    background: var(--stop) !important;
-    color: #5D4E37 !important; /* Fallback para navegadores sin variables CSS */
-    color: var(--primary) !important;
-    font-weight: 800;
-}
-
-/* ==========================================
-   INSTALACIÓN PWA (MEJORADO)
-   ========================================== */
 .install-box {
     margin: 20px 0;
     flex-shrink: 0;
 }
 
-.install-btn {
-    background: linear-gradient(180deg, #3b6e7a 0%, #2AA952 100%);
-    color: white;
-    font-size: 17px;
-    padding: 18px;
-}
-
 /* ==========================================
-   NAVEGACIÓN INFERIOR (FIXED) - 3 BOTONES
-   ========================================== */
-.bottom-nav {
-    position: fixed;
-    bottom: 20px;
-    left: 50%;
-    transform: translateX(-50%);
-    width: calc(100% - 40px);
-    max-width: 440px;
-    background: #FFFFFF; /* Fallback para navegadores sin variables CSS */
-    background: var(--white);
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 12px 15px;
-    border-radius: 25px;
-    border: 1.5px solid #D7D0C8; /* Fallback para navegadores sin variables CSS */
-    border: 1.5px solid var(--gray-border);
-    box-shadow: 0 -5px 20px rgba(0, 0, 0, 0.1);
-    z-index: 1000;
-}
-
-.nav-item {
-    cursor: pointer;
-    text-align: center;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    color: #5D4E37; /* Fallback para navegadores sin variables CSS */
-    color: var(--primary);
-    font-size: 13px;
-    font-weight: 600;
-    min-width: 65px;
-    flex: 1;
-    transition: all 0.2s ease;
-}
-
-.nav-item:active {
-    transform: scale(0.95);
-}
-
-/* Botón Ayuda (JL) */
-.circulo-jl-nav {
-    width: 50px;
-    height: 50px;
-    border-radius: 50%;
-    background-color: #FFFFFF; /* Fallback para navegadores sin variables CSS */
-    background-color: var(--white);
-    border: 3px solid #000000;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    color: #000000;
-    font-family: 'Monotype Corsiva', 'Apple Chancery', cursive;
-    font-size: 1.8em;
-    margin-bottom: 4px;
-}
-
-/* Botón Bluetooth (AHORA SOLO INSTRUCCIONES) */
-.circulo-bt-nav {
-    width: 50px;
-    height: 50px;
-    border-radius: 50%;
-    background: linear-gradient(180deg, #8B7355 0%, #5D4E37 100%); /* Fallback para navegadores sin variables CSS */
-    background: linear-gradient(180deg, var(--primary-light) 0%, var(--primary) 100%);
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    color: #FFFFFF; /* Fallback para navegadores sin variables CSS */
-    color: var(--white);
-    font-size: 1.5em;
-    margin-bottom: 4px;
-    transition: all 0.3s ease;
-    box-shadow: 0 3px 8px rgba(0, 0, 0, 0.15);
-}
-
-/* Botón Admin */
-.admin-pill {
-    background: #444;
-    color: #FFFFFF !important; /* Fallback para navegadores sin variables CSS */
-    color: var(--white) !important;
-    border-radius: 12px;
-    padding: 10px 15px !important;
-    font-weight: 700;
-    font-size: 14px;
-    min-height: 50px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    margin: 0;
-}
-
-/* ==========================================
-   PANTALLA DE CONFIGURACIÓN (SIMPLIFICADA)
-   ========================================== */
-.config-header {
-    display: flex;
-    align-items: center;
-    gap: 15px;
-    margin-bottom: 25px;
-    flex-shrink: 0;
-}
-
-.config-header button {
-    background: none;
-    border: 2px solid #8B7355; /* Fallback para navegadores sin variables CSS */
-    border: 2px solid var(--primary-light);
-    color: #5D4E37; /* Fallback para navegadores sin variables CSS */
-    color: var(--primary);
-    padding: 10px 15px;
-    border-radius: 10px;
-    font-weight: 600;
-    cursor: pointer;
-    transition: all 0.2s ease;
-}
-
-.config-header button:active {
-    background: #8B7355; /* Fallback para navegadores sin variables CSS */
-    background: var(--primary-light);
-    color: white;
-}
-
-.config-header h2 {
-    margin: 0;
-    color: #5D4E37; /* Fallback para navegadores sin variables CSS */
-    color: var(--primary);
-    font-size: 1.5em;
-}
-
-.config-description {
-    color: #666;
-    margin: 15px 0 25px 0;
-    line-height: 1.5;
-}
-
-.outline-btn {
-    background: transparent;
-    border: 2px solid #8B7355; /* Fallback para navegadores sin variables CSS */
-    border: 2px solid var(--primary-light);
-    color: #5D4E37; /* Fallback para navegadores sin variables CSS */
-    color: var(--primary);
-    padding: 18px;
-    border-radius: 18px; /* Fallback para navegadores sin variables CSS */
-    border-radius: var(--radius);
-    font-weight: 700;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    width: 100%;
-    margin-top: 10px;
-}
-
-.outline-btn:active {
-    background: #8B7355; /* Fallback para navegadores sin variables CSS */
-    background: var(--primary-light);
-    color: white;
-}
-
-/* ==========================================
-   MODAL DE AYUDA (QR CENTRADO)
+   MODALES
    ========================================== */
 .modal-overlay {
     position: fixed;
@@ -602,8 +554,7 @@ body {
 }
 
 .modal-content {
-    background: #FFFFFF; /* Fallback para navegadores sin variables CSS */
-    background: var(--white);
+    background: #FFFFFF;
     width: 100%;
     max-width: 400px;
     padding: 30px 25px;
@@ -621,8 +572,7 @@ body {
 }
 
 .modal-title {
-    color: #5D4E37; /* Fallback para navegadores sin variables CSS */
-    color: var(--primary);
+    color: #5D4E37;
     margin: 0 0 25px 0;
     font-size: 1.5em;
     font-weight: 800;
@@ -633,8 +583,7 @@ body {
     padding: 15px;
     background: white;
     border-radius: 15px;
-    border: 2px solid #D7D0C8; /* Fallback para navegadores sin variables CSS */
-    border: 2px solid var(--gray-border);
+    border: 2px solid #D7D0C8;
     display: inline-block;
     box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
 }
@@ -658,44 +607,60 @@ body {
     padding: 12px;
     border-radius: 10px;
     margin: 20px 0;
-    color: #5D4E37; /* Fallback para navegadores sin variables CSS */
-    color: var(--primary);
+    color: #5D4E37;
     font-weight: 600;
     font-size: 15px;
 }
 
 /* ==========================================
-   TECLADO NUMÉRICO (ELIMINADO COMPLETAMENTE)
+   ESTADOS Y MENSAJES
    ========================================== */
-/* NOTA: Todo el código de teclado personalizado ha sido eliminado
-   porque la aplicación usa inputmode="numeric" para teclado nativo.
-   Esto garantiza compatibilidad a 20+ años y mejor experiencia móvil. */
+.status-bar {
+    padding: 14px 16px;
+    background: #FFF3CD;
+    color: #856404;
+    border-radius: 12px;
+    text-align: center;
+    margin-bottom: 15px;
+    font-weight: 600;
+    font-size: 15px;
+    border: 1px solid rgba(0, 0, 0, 0.05);
+    flex-shrink: 0;
+}
 
-/* ==========================================
-   UTILIDADES
-   ========================================== */
-.hidden {
-    display: none !important;
+.error-message {
+    background: linear-gradient(90deg, #FEE2E2 0%, #FECACA 100%);
+    border: 2px solid #EF4444;
+    color: #7F1D1D;
+    padding: 12px;
+    border-radius: 10px;
+    margin: 10px 0;
+    font-weight: 600;
+}
+
+.success-message {
+    background: linear-gradient(90deg, #D1FAE5 0%, #A7F3D0 100%);
+    border: 2px solid #10B981;
+    color: #064E3B;
+    padding: 12px;
+    border-radius: 10px;
+    margin: 10px 0;
+    font-weight: 600;
+}
+
+.warning-message {
+    background: linear-gradient(90deg, #FEF3C7 0%, #FDE68A 100%);
+    border: 2px solid #F59E0B;
+    color: #92400E;
+    padding: 12px;
+    border-radius: 10px;
+    margin: 10px 0;
+    font-weight: 600;
 }
 
 /* ==========================================
-   CORRECCIONES ESPECÍFICAS PARA PWA INSTALADA
+   MODO STANDALONE (PWA INSTALADA)
    ========================================== */
-
-/* Ajuste para barra de estado en iOS */
-@supports (padding-top: env(safe-area-inset-top)) {
-    .screen {
-        padding-top: calc(20px + env(safe-area-inset-top));
-        padding-bottom: calc(120px + env(safe-area-inset-bottom));
-    }
-    
-    .bottom-nav {
-        bottom: calc(20px + env(safe-area-inset-bottom));
-        padding-bottom: calc(12px + env(safe-area-inset-bottom));
-    }
-}
-
-/* Fijar altura en modo standalone */
 @media (display-mode: standalone) {
     body {
         overflow: hidden;
@@ -710,30 +675,46 @@ body {
     .screen {
         min-height: calc(100vh - 40px);
         max-height: calc(100vh - 40px);
-        padding-bottom: calc(120px + env(safe-area-inset-bottom));
     }
     
-    /* Asegurar que los botones sean táctiles en standalone */
     button {
         min-height: 44px;
         min-width: 44px;
     }
     
-    /* Ocultar consejos de instalación si ya está instalado */
     .install-advice,
-    .install-box {
+    .install-box,
+    #install-container,
+    #install-advice {
         display: none !important;
     }
 }
 
-/* Prevenir zoom en inputs iOS */
+/* ==========================================
+   SAFE AREAS (iOS)
+   ========================================== */
+@supports (padding-top: env(safe-area-inset-top)) {
+    .screen {
+        padding-top: calc(20px + env(safe-area-inset-top));
+        padding-bottom: calc(120px + env(safe-area-inset-bottom));
+    }
+    
+    .bottom-nav {
+        bottom: calc(20px + env(safe-area-inset-bottom));
+        padding-bottom: calc(12px + env(safe-area-inset-bottom));
+    }
+}
+
+/* ==========================================
+   PREVENIR ZOOM EN INPUTS (iOS)
+   ========================================== */
 input, textarea, select {
     font-size: 16px !important;
     touch-action: manipulation;
 }
 
 /* ==========================================
-   MEDIA QUERIES PARA CELULARES PEQUEÑOS
+   MEDIA QUERIES - CELULARES PEQUEÑOS
    ========================================== */
 @media (max-height: 650px) {
     .logo-area {
@@ -788,11 +769,6 @@ input, textarea, select {
         padding: 12px;
         font-size: 13px;
     }
-    
-    .bluetooth-step,
-    .install-hints {
-        font-size: 12px;
-    }
 }
 
 @media (max-width: 350px) {
@@ -824,56 +800,37 @@ input, textarea, select {
         font-size: 11px;
     }
     
-    .bluetooth-instructions,
-    .install-advice {
-        padding: 10px;
-    }
-    
     #pin-input {
-        font-size: 28px;
+        font-size: 28px !important;
         height: 60px;
         letter-spacing: 10px;
     }
 }
 
 /* ==========================================
-   SOPORTE PARA iOS SAFARI
+   iOS SAFARI ESPECÍFICO
    ========================================== */
 @supports (-webkit-touch-callout: none) {
     .screen {
         min-height: 100vh;
-        min-height: 100dvh; /* Nueva unidad estándar */
     }
     
     #app-container {
         min-height: 100vh;
-        min-height: 100dvh; /* Nueva unidad estándar */
     }
     
-    /* Mejorar apariencia en iOS */
     input, button {
         -webkit-appearance: none;
     }
     
-    /* Input específico para iOS */
     #pin-input {
         letter-spacing: 10px;
     }
 }
 
 /* ==========================================
-   ACCESIBILIDAD PARA PERSONAS MAYORES
+   ACCESIBILIDAD ALTO CONTRASTE
    ========================================== */
-#pin-input {
-    font-size: 32px !important;
-    font-weight: bold !important;
-    color: #5D4E37 !important; /* Fallback para navegadores sin variables CSS */
-    color: var(--primary) !important;
-    background-color: #FFFFFF !important; /* Fallback para navegadores sin variables CSS */
-    background-color: var(--white) !important;
-}
-
-/* Alto contraste para mejor visibilidad */
 @media (prefers-contrast: high) {
     #pin-input {
         border-width: 3px;
@@ -886,127 +843,26 @@ input, textarea, select {
     }
 }
 
-/* Tamaño de texto más grande si el sistema lo pide */
+/* ==========================================
+   REDUCIR ANIMACIONES
+   ========================================== */
 @media (prefers-reduced-motion: reduce) {
-    * {
+    *, *::before, *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
         transition-duration: 0.01ms !important;
     }
 }
 
 /* ==========================================
-   MEJORAS PARA 20+ AÑOS Y OFFLINE COMPLETO
+   MODO OSCURO
    ========================================== */
-
-/* 1. FALLBACKS PARA IMÁGENES/ICONOS OFFLINE */
-#app-icon,
-.home-icon,
-.qr-img {
-    position: relative;
-}
-
-/* Pseudoelemento fallback si la imagen no carga */
-#app-icon::after,
-.home-icon::after,
-.qr-img::after {
-    content: "🔔";
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    font-size: 3em;
-    opacity: 0;
-    z-index: -1;
-}
-
-/* Mostrar fallback solo si la imagen no carga */
-img:not([src]), 
-img[src=""],
-img[src*="error"] {
-    opacity: 0;
-}
-
-img:not([src]) + ::after,
-img[src=""] + ::after,
-img[src*="error"] + ::after {
-    opacity: 1;
-    z-index: 1;
-}
-
-/* 2. FUENTES LOCALES COMO FALLBACK */
-@font-face {
-    font-family: 'System Fallback';
-    src: local('Arial'), local('Helvetica'), local('sans-serif');
-    font-display: swap;
-}
-
-body {
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen-Sans, Ubuntu, Cantarell, 
-                 'System Fallback', sans-serif;
-}
-
-/* 3. OPTIMIZACIONES DE RENDIMIENTO PARA PWA */
-@media (display-mode: standalone) {
-    /* Hardware acceleration para mejor rendimiento */
-    #app-container {
-        transform: translateZ(0);
-        -webkit-transform: translateZ(0);
-        backface-visibility: hidden;
-        -webkit-backface-visibility: hidden;
-    }
-    
-    /* Mejor scrolling en iOS */
-    .screen {
-        -webkit-overflow-scrolling: touch;
-    }
-    
-    /* Prevenir selección de texto en botones */
-    button, .nav-item {
-        -webkit-user-select: none;
-        user-select: none;
-    }
-}
-
-/* 5. ESTADOS DE CONEXIÓN VISUALES */
-.status-online {
-    background: linear-gradient(90deg, #10B981 0%, #059669 100%) !important;
-    color: white !important;
-}
-
-.status-offline {
-    background: linear-gradient(90deg, #F59E0B 0%, #D97706 100%) !important;
-    color: white !important;
-}
-
-.status-error {
-    background: linear-gradient(90deg, #EF4444 0%, #DC2626 100%) !important;
-    color: white !important;
-}
-
-/* 6. MEJORAS DE ACCESIBILIDAD PARA PERSONAS MAYORES */
-@media (min-width: 768px) {
-    /* Texto más grande en tablets */
-    body {
-        font-size: 18px;
-    }
-    
-    #pin-input {
-        font-size: 40px !important;
-        height: 80px;
-    }
-    
-    .bell-btn, .stop-btn, .main-btn {
-        font-size: 20px;
-        min-height: 80px;
-    }
-}
-
-/* 7. COMPATIBILIDAD CON MODO OSCURO */
 @media (prefers-color-scheme: dark) {
     :root {
         --bg: #1F2937;
         --white: #374151;
         --gray-border: #4B5563;
-        --primary: #E5E7EB; /* Más claro para mejor contraste */
+        --primary: #E5E7EB;
         --primary-light: #9CA3AF;
     }
     
@@ -1015,25 +871,20 @@ body {
     }
     
     #app-container {
-        background: #1F2937; /* Fallback para navegadores sin variables CSS */
-        background: var(--bg);
+        background: #1F2937;
         box-shadow: 0 0 20px rgba(0, 0, 0, 0.3);
     }
     
     .login-card,
     .config-card {
-        background: #374151; /* Fallback para navegadores sin variables CSS */
-        background: var(--white);
-        border-color: #4B5563; /* Fallback para navegadores sin variables CSS */
-        border-color: var(--gray-border);
+        background: #374151;
+        border-color: #4B5563;
     }
     
     #pin-input {
         background: #111827;
-        color: #E5E7EB; /* Fallback para navegadores sin variables CSS */
-        color: var(--primary);
-        border-color: #4B5563; /* Fallback para navegadores sin variables CSS */
-        border-color: var(--gray-border);
+        color: #E5E7EB;
+        border-color: #4B5563;
     }
     
     .bluetooth-instructions {
@@ -1058,38 +909,9 @@ body {
     }
 }
 
-/* 9. ESTILOS PARA ERRORES Y ADVERTENCIAS */
-.error-message {
-    background: linear-gradient(90deg, #FEE2E2 0%, #FECACA 100%);
-    border: 2px solid #EF4444;
-    color: #7F1D1D;
-    padding: 12px;
-    border-radius: 10px;
-    margin: 10px 0;
-    font-weight: 600;
-}
-
-.success-message {
-    background: linear-gradient(90deg, #D1FAE5 0%, #A7F3D0 100%);
-    border: 2px solid #10B981;
-    color: #064E3B;
-    padding: 12px;
-    border-radius: 10px;
-    margin: 10px 0;
-    font-weight: 600;
-}
-
-.warning-message {
-    background: linear-gradient(90deg, #FEF3C7 0%, #FDE68A 100%);
-    border: 2px solid #F59E0B;
-    color: #92400E;
-    padding: 12px;
-    border-radius: 10px;
-    margin: 10px 0;
-    font-weight: 600;
-}
-
-/* 10. MEJORAS DE IMPRESIÓN (PARA MANUALES) */
+/* ==========================================
+   IMPRESIÓN
+   ========================================== */
 @media print {
     .bottom-nav,
     .install-advice,
@@ -1115,22 +937,9 @@ body {
     }
 }
 
-/* 11. COMPATIBILIDAD CON LECTORES DE PANTALLA */
-.sr-only {
-    position: absolute;
-    width: 1px;
-    height: 1px;
-    padding: 0;
-    margin: -1px;
-    overflow: hidden;
-    clip: rect(0, 0, 0, 0);
-    white-space: nowrap;
-    border: 0;
-}
-
-/* 13. POLYFILL VISUAL PARA FLEXBOX GAP (IE11) */
-
-/* 14. MEJORAS PARA ALTA DENSIDAD DE PIXELES */
+/* ==========================================
+   ALTA DENSIDAD DE PÍXELES
+   ========================================== */
 @media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
     .circle-logo {
         border-width: 1.5px;
@@ -1145,51 +954,9 @@ body {
     }
 }
 
-/* 15. ESTILOS DE CARGA (SPLASH SCREEN) */
-#splash-screen {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: #5D4E37; /* Fallback para navegadores sin variables CSS */
-    background: var(--primary);
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    z-index: 9999;
-    transition: opacity 0.5s ease;
-}
-
-#splash-screen.hidden {
-    opacity: 0;
-    pointer-events: none;
-}
-
-/* 16. ESTILOS PARA WEB COMPONENTS (FUTURO) */
-:defined {
-    opacity: 1;
-    transition: opacity 0.3s ease;
-}
-
-:not(:defined) {
-    opacity: 0;
-}
-
-/* 17. MEJORAS DE PERFORMANCE */
-@media (prefers-reduced-data: reduce) {
-    .circle-logo,
-    .qr-img,
-    #app-icon {
-        background-image: none !important;
-    }
-    
-    * {
-        background-image: none !important;
-    }
-}
-
-/* 19. ESTILOS PARA GESTOS TÁCTILES MEJORADOS */
+/* ==========================================
+   PANTALLAS TÁCTILES (POINTER COARSE)
+   ========================================== */
 @media (pointer: coarse) {
     .bell-btn,
     .stop-btn,
@@ -1199,7 +966,10 @@ body {
         min-width: 60px;
     }
     
-    /* Mayor área táctil */
+    button {
+        position: relative;
+    }
+    
     button::after {
         content: "";
         position: absolute;
@@ -1210,7 +980,45 @@ body {
     }
 }
 
-/* 20. ESTILOS LEGACY PARA NAVEGADORES ANTIGUOS */
+/* ==========================================
+   TABLETS (TEXTO MÁS GRANDE)
+   ========================================== */
+@media (min-width: 768px) {
+    body {
+        font-size: 18px;
+    }
+    
+    #pin-input {
+        font-size: 40px !important;
+        height: 80px;
+    }
+    
+    .bell-btn, 
+    .stop-btn, 
+    .main-btn {
+        font-size: 20px;
+        min-height: 80px;
+    }
+}
+
+/* ==========================================
+   LECTURA DE PANTALLA
+   ========================================== */
+.sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+}
+
+/* ==========================================
+   FALLBACK PARA NAVEGADORES SIN GRID
+   ========================================== */
 @supports not (display: grid) {
     .control-grid {
         display: flex;
@@ -1232,13 +1040,12 @@ body {
             margin: 7.5px;
         }
         
-        .control-grid button:nth-child(5),
-        .control-grid button:nth-child(6) {
+        .control-grid button:nth-child(5) {
             flex: 1 0 100%;
         }
     }
 }
 
 /* ==========================================
-   FIN DE LAS MEJORAS PARA 20+ AÑOS
+   FIN DEL ARCHIVO
    ========================================== */
