@@ -337,10 +337,12 @@ function activarModoOfflineBasico() {
 function verificarRecursosOffline() {
     if (!servicioWorkerActivo) {
         warn('⚠️ No se puede verificar recursos - SW inactivo');
+        mostrarAlert('Service Worker no está activo. Recargue la aplicación.');
         return;
     }
     
     log('🔍 Verificando recursos cacheados...');
+    mostrarNotificacion('🔍 Verificando recursos offline...');
     
     var channel = new MessageChannel();
     
@@ -351,20 +353,40 @@ function verificarRecursosOffline() {
             var totalCacheado = event.data.total;
             var totalEsperado = 19;
             
+            // Verificar específicamente los audios
+            var archivosEsperados = [
+                'campana1.mp3',
+                'campana2.mp3',
+                'campana3.mp3',
+                'emergencia.mp3'
+            ];
+            
             if (totalCacheado >= totalEsperado) {
                 log('✅ Recursos offline verificados');
                 recursosOfflineVerificados = true;
                 
-                // SOLO mostrar si el usuario presionó el botón manualmente
-                // NO mostrar automáticamente al abrir la app
-                
+                mostrarAlert(
+                    '✅ RECURSOS OFFLINE VERIFICADOS\n\n' +
+                    'Total archivos cacheados: ' + totalCacheado + '\n' +
+                    'Estado: Listo para funcionar sin internet\n\n' +
+                    'Los audios están disponibles offline.'
+                );
             } else {
                 warn('⚠️ Solo', totalCacheado, '/', totalEsperado, 'recursos en cache');
                 
-                if (navigator.onLine) {
-                    log('🔄 Intentando recachear...');
-                    recachearRecursosFaltantes();
-                }
+                mostrarAlert(
+                    '⚠️ RECURSOS INCOMPLETOS\n\n' +
+                    'Cacheados: ' + totalCacheado + '/' + totalEsperado + '\n\n' +
+                    'Algunos archivos pueden no estar disponibles offline.\n\n' +
+                    '¿Desea recachear todos los recursos?'
+                ).then(function() {
+                    if (navigator.onLine) {
+                        log('🔄 Recacheando recursos faltantes...');
+                        recachearRecursosFaltantes();
+                    } else {
+                        mostrarAlert('Necesita conexión a internet para recachear recursos.');
+                    }
+                });
             }
         }
     };
@@ -376,6 +398,7 @@ function verificarRecursosOffline() {
         );
     } else {
         warn('⚠️ SW no controlando página');
+        mostrarAlert('Service Worker no está controlando la página. Cierre y abra la app nuevamente.');
     }
 }
 
