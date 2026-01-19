@@ -1,11 +1,11 @@
 // ==========================================
 // SERVICE WORKER - CAMPANAS PARROQUIALES
-// Versión: 1.0.0
+// Versión: 1.0.1 - CORREGIDO PARA CACHEAR AUDIOS
 // Diseñado para durar 20+ años
 // Estrategia: Cache First con Network Fallback
 // ==========================================
 
-const APP_VERSION = '1.0.0';
+const APP_VERSION = '1.0.1';
 const CACHE_NAME = `campanas-pwa-v${APP_VERSION}`;
 const CACHE_LIMIT_MB = 100;
 const ES_DESARROLLO = false; // Cambiar a true solo en desarrollo local
@@ -53,7 +53,7 @@ const error = (msg, ...args) => console.error(`❌ SW [${APP_VERSION}]:`, msg, .
 // INSTALACIÓN: CACHEAR TODO INMEDIATAMENTE
 // ==========================================
 self.addEventListener('install', function(event) {
-  log('Instalando Service Worker');
+  console.log('🔔 SW: Instalando Service Worker v' + APP_VERSION);
   
   // Forzar activación inmediata
   self.skipWaiting();
@@ -61,7 +61,7 @@ self.addEventListener('install', function(event) {
   event.waitUntil(
     caches.open(CACHE_NAME)
       .then(function(cache) {
-        log('Cache abierto:', CACHE_NAME);
+        console.log('🔔 SW: Cache abierto:', CACHE_NAME);
         
         // Estrategia robusta: cachear uno por uno
         return cachearArchivosIndividualmente(cache, ARCHIVOS_CRITICOS)
@@ -69,10 +69,12 @@ self.addEventListener('install', function(event) {
             const exitosos = resultados.filter(r => r.exito).length;
             const fallidos = resultados.filter(r => !r.exito);
             
-            log(`Cacheados: ${exitosos}/${ARCHIVOS_CRITICOS.length} archivos`);
+            console.log(`🔔 SW: Cacheados ${exitosos}/${ARCHIVOS_CRITICOS.length} archivos`);
             
             if (fallidos.length > 0) {
-              warn('Archivos no cacheados:', fallidos.map(f => f.url));
+              console.warn('⚠️ SW: Archivos NO cacheados:', fallidos.map(f => f.url));
+            } else {
+              console.log('✅ SW: TODOS los archivos cacheados correctamente (incluyendo MP3)');
             }
             
             // Continuar aunque algunos fallen (resiliencia)
@@ -80,11 +82,11 @@ self.addEventListener('install', function(event) {
           });
       })
       .then(function() {
-        log('Instalación completada');
+        console.log('🔔 SW: Instalación completada');
         return limpiarCacheSiExcedeLimite();
       })
       .catch(function(err) {
-        error('Error durante instalación:', err);
+        console.error('❌ SW: Error durante instalación:', err);
         // No fallar la instalación por errores de cache
         return Promise.resolve();
       })
@@ -93,33 +95,51 @@ self.addEventListener('install', function(event) {
 
 // ==========================================
 // FUNCIÓN: CACHEAR ARCHIVOS UNO POR UNO
+// CORREGIDA PARA MP3 Y ARCHIVOS LOCALES
 // ==========================================
 function cachearArchivosIndividualmente(cache, archivos) {
   const promesas = archivos.map(function(url) {
+    const esAudio = url.indexOf('.mp3') > -1;
+    const esPDF = url.indexOf('.pdf') > -1;
+    
+    // INTENTO 1: Fetch con configuración permisiva (funciona para archivos locales)
     return fetch(url, {
-      cache: 'reload',
-      credentials: 'same-origin'
+      mode: 'same-origin',  // Permite archivos del mismo origen
+      cache: 'no-cache',    // Fuerza descarga fresh
+      credentials: 'omit'   // No envía credenciales (más compatible)
     })
       .then(function(response) {
-        if (!response || response.status !== 200) {
-          warn(`Respuesta no válida para ${url}: ${response.status}`);
-          return { url: url, exito: false, error: `HTTP ${response.status}` };
-        }
+        // Validar respuesta - Aceptar status 200 O tipo opaque
+        const esValida = response && (
+          response.status === 200 || 
+          response.status === 0 || 
+          response.type === 'opaque' ||
+          response.type === 'basic'
+        );
         
-        // Cachear la respuesta
-        return cache.put(url, response.clone())
-          .then(function() {
-            log(`✓ Cacheado: ${url}`);
-            return { url: url, exito: true };
-          })
-          .catch(function(err) {
-            warn(`Error cacheando ${url}:`, err.message);
-            return { url: url, exito: false, error: err.message };
-          });
+        if (esValida) {
+          // Cachear la respuesta
+          return cache.put(url, response.clone())
+            .then(function() {
+              console.log('✅ SW: Cacheado:', url, esAudio ? '(AUDIO)' : '');
+              return { url: url, exito: true };
+            })
+            .catch(function(err) {
+              console.warn('⚠️ SW: Error al guardar en cache', url, ':', err.message);
+              return { url: url, exito: false, error: err.message };
+            });
+        } else {
+          console.warn('⚠️ SW: Respuesta no válida para', url, 'status:', response.status, 'type:', response.type);
+          
+          // INTENTO 2: Retry con configuración alternativa
+          return intentarCachearConFallback(cache, url, esAudio);
+        }
       })
       .catch(function(err) {
-        warn(`Error fetch ${url}:`, err.message);
-        return { url: url, exito: false, error: err.message };
+        console.warn('⚠️ SW: Error fetch inicial', url, ':', err.message);
+        
+        // INTENTO 2: Retry con configuración alternativa
+        return intentarCachearConFallback(cache, url, esAudio);
       });
   });
   
@@ -127,10 +147,39 @@ function cachearArchivosIndividualmente(cache, archivos) {
 }
 
 // ==========================================
+// FUNCIÓN AUXILIAR: FALLBACK DE CACHÉ
+// ==========================================
+function intentarCachearConFallback(cache, url, esAudio) {
+  console.log('🔄 SW: Reintentando cachear:', url);
+  
+  // Segundo intento con configuración más permisiva
+  return fetch(url, {
+    mode: 'no-cors',      // Permite CORS permisivo
+    cache: 'force-cache'  // Intenta desde cache del navegador primero
+  })
+    .then(function(response) {
+      // Con no-cors, response será 'opaque' - cachear de todos modos
+      return cache.put(url, response.clone())
+        .then(function() {
+          console.log('✅ SW: Cacheado (fallback):', url, esAudio ? '(AUDIO)' : '');
+          return { url: url, exito: true };
+        })
+        .catch(function(err) {
+          console.error('❌ SW: Falló fallback para', url, ':', err.message);
+          return { url: url, exito: false, error: err.message };
+        });
+    })
+    .catch(function(err) {
+      console.error('❌ SW: Falló completamente', url, ':', err.message);
+      return { url: url, exito: false, error: err.message };
+    });
+}
+
+// ==========================================
 // ACTIVACIÓN: LIMPIAR CACHÉS ANTIGUOS
 // ==========================================
 self.addEventListener('activate', function(event) {
-  log('Activando Service Worker');
+  console.log('🔔 SW: Activando Service Worker');
   
   event.waitUntil(
     caches.keys()
@@ -138,7 +187,7 @@ self.addEventListener('activate', function(event) {
         return Promise.all(
           cacheNames.map(function(cacheName) {
             if (cacheName !== CACHE_NAME && cacheName.startsWith('campanas-pwa')) {
-              log('Eliminando cache antigua:', cacheName);
+              console.log('🗑️ SW: Eliminando cache antigua:', cacheName);
               return caches.delete(cacheName);
             }
           })
@@ -149,7 +198,7 @@ self.addEventListener('activate', function(event) {
         return self.clients.claim();
       })
       .then(function() {
-        log('Service Worker activado y controlando páginas');
+        console.log('✅ SW: Activado y controlando páginas');
         
         // Notificar a todas las páginas activas
         return self.clients.matchAll().then(function(clients) {
@@ -206,23 +255,31 @@ function limpiarCacheSiExcedeLimite() {
               const limiteBytes = CACHE_LIMIT_MB * 1024 * 1024;
               
               if (ES_DESARROLLO) {
-                log(`Tamaño cache: ${(tamanoTotal / (1024 * 1024)).toFixed(2)}MB / ${CACHE_LIMIT_MB}MB`);
+                console.log(`📊 SW: Tamaño cache: ${(tamanoTotal / (1024 * 1024)).toFixed(2)}MB / ${CACHE_LIMIT_MB}MB`);
               }
               
               if (tamanoTotal > limiteBytes) {
-                log('Cache excede límite, limpiando archivos antiguos...');
+                console.log('🧹 SW: Cache excede límite, limpiando...');
                 
-                // Eliminar 20% más antiguos
-                const eliminarCount = Math.ceil(keys.length * 0.2);
+                // NO eliminar archivos críticos (MP3, HTML, CSS, JS)
+                const keysNoEsenciales = keys.filter(function(key) {
+                  const url = key.url || key;
+                  return !ARCHIVOS_CRITICOS.some(function(critico) {
+                    return url.includes(critico);
+                  });
+                });
+                
+                // Eliminar 20% de archivos NO esenciales
+                const eliminarCount = Math.ceil(keysNoEsenciales.length * 0.2);
                 const promesasEliminacion = [];
                 
                 for (let i = 0; i < eliminarCount; i++) {
-                  promesasEliminacion.push(cache.delete(keys[i]));
+                  promesasEliminacion.push(cache.delete(keysNoEsenciales[i]));
                 }
                 
                 return Promise.all(promesasEliminacion)
                   .then(function() {
-                    log(`${eliminarCount} archivos eliminados del cache`);
+                    console.log(`🗑️ SW: ${eliminarCount} archivos no esenciales eliminados`);
                   });
               }
               
@@ -231,13 +288,14 @@ function limpiarCacheSiExcedeLimite() {
         });
     })
     .catch(function(err) {
-      warn('Error limpiando cache:', err);
+      console.warn('⚠️ SW: Error limpiando cache:', err);
       return Promise.resolve();
     });
 }
 
 // ==========================================
 // FETCH: ESTRATEGIA CACHE FIRST
+// CORREGIDA PARA AUDIOS OFFLINE
 // ==========================================
 self.addEventListener('fetch', function(event) {
   // Solo manejar GET
@@ -261,7 +319,7 @@ self.addEventListener('fetch', function(event) {
                   cache.put(event.request, responseClone);
                 })
                 .catch(function(err) {
-                  warn('Error cacheando recurso remoto:', err);
+                  console.warn('⚠️ SW: Error cacheando recurso remoto:', err);
                 });
             }
             return response;
@@ -271,10 +329,9 @@ self.addEventListener('fetch', function(event) {
             return caches.match(event.request)
               .then(function(cachedResponse) {
                 if (cachedResponse) {
-                  log('Usando versión cacheada de recurso remoto');
+                  console.log('📦 SW: Usando cache para recurso remoto');
                   return cachedResponse;
                 }
-                // Si no hay cache, devolver error genérico
                 return new Response(
                   JSON.stringify({ error: 'Recurso no disponible offline' }),
                   { 
@@ -295,10 +352,15 @@ self.addEventListener('fetch', function(event) {
     caches.match(event.request)
       .then(function(cachedResponse) {
         if (cachedResponse) {
-          // Devolver desde cache inmediatamente
+          // ✅ ENCONTRADO EN CACHE - Devolver inmediatamente
+          const esAudio = event.request.url.indexOf('.mp3') > -1;
           
-          // Actualizar cache en background (sin bloquear respuesta)
-          if (navigator.onLine) {
+          if (esAudio) {
+            console.log('🔊 SW: Audio desde cache:', event.request.url);
+          }
+          
+          // NO actualizar audios en background (pueden causar problemas)
+          if (!esAudio && navigator.onLine) {
             actualizarCacheEnBackground(event.request)
               .catch(function() {
                 // Silenciar errores de actualización background
@@ -308,55 +370,65 @@ self.addEventListener('fetch', function(event) {
           return cachedResponse;
         }
         
-        // Si no está en cache, buscar en red
+        // ❌ NO está en cache - Buscar en red
+        console.log('🌐 SW: Cache miss, buscando en red:', event.request.url);
+        
         return fetch(event.request)
           .then(function(networkResponse) {
-            // Validar respuesta
-            if (!networkResponse || networkResponse.status !== 200 || networkResponse.type === 'opaque') {
-              return networkResponse;
+            // Validar respuesta - Aceptar más tipos de respuesta
+            const esValida = networkResponse && (
+              networkResponse.status === 200 ||
+              networkResponse.status === 0 ||
+              networkResponse.type === 'opaque' ||
+              networkResponse.type === 'basic'
+            );
+            
+            if (esValida) {
+              // Cachear para futuro uso
+              const responseToCache = networkResponse.clone();
+              
+              caches.open(CACHE_NAME)
+                .then(function(cache) {
+                  cache.put(event.request, responseToCache)
+                    .then(function() {
+                      console.log('💾 SW: Guardado en cache desde red:', event.request.url);
+                      limpiarCacheSiExcedeLimite();
+                    });
+                })
+                .catch(function(err) {
+                  console.warn('⚠️ SW: Error cacheando desde red:', err);
+                });
             }
-            
-            // Cachear para futuro uso
-            const responseToCache = networkResponse.clone();
-            
-            caches.open(CACHE_NAME)
-              .then(function(cache) {
-                cache.put(event.request, responseToCache)
-                  .then(function() {
-                    limpiarCacheSiExcedeLimite();
-                  });
-              })
-              .catch(function(err) {
-                warn('Error cacheando recurso nuevo:', err);
-              });
             
             return networkResponse;
           })
           .catch(function(err) {
-            log('Offline - recurso no en cache:', event.request.url);
+            console.error('❌ SW: Offline y recurso no en cache:', event.request.url);
             
             // Fallbacks según tipo de recurso
-            if (event.request.url.includes('.mp3')) {
+            if (event.request.url.indexOf('.mp3') > -1) {
               return new Response(
-                JSON.stringify({ error: 'Audio no disponible offline' }),
+                'Audio no disponible offline',
                 { 
                   status: 503,
-                  headers: { 'Content-Type': 'application/json' }
+                  statusText: 'Service Unavailable',
+                  headers: { 'Content-Type': 'text/plain' }
                 }
               );
             }
             
-            if (event.request.url.includes('.pdf')) {
+            if (event.request.url.indexOf('.pdf') > -1) {
               return new Response(
-                JSON.stringify({ error: 'PDF no disponible offline' }),
+                'PDF no disponible offline',
                 { 
                   status: 503,
-                  headers: { 'Content-Type': 'application/json' }
+                  statusText: 'Service Unavailable',
+                  headers: { 'Content-Type': 'text/plain' }
                 }
               );
             }
             
-            // Fallback a página principal para navegación
+            // Fallback a página principal
             return caches.match('./index.html')
               .then(function(indexResponse) {
                 return indexResponse || new Response(
@@ -375,7 +447,14 @@ self.addEventListener('fetch', function(event) {
 function actualizarCacheEnBackground(request) {
   return fetch(request)
     .then(function(response) {
-      if (!response || response.status !== 200 || response.type === 'opaque') {
+      const esValida = response && (
+        response.status === 200 ||
+        response.status === 0 ||
+        response.type === 'opaque' ||
+        response.type === 'basic'
+      );
+      
+      if (!esValida) {
         return Promise.resolve();
       }
       
@@ -395,7 +474,7 @@ self.addEventListener('message', function(event) {
   }
   
   const tipo = event.data.type;
-  log('Mensaje recibido:', tipo);
+  console.log('📨 SW: Mensaje recibido:', tipo);
   
   // VERIFICAR CACHE
   if (tipo === 'VERIFICAR_CACHE') {
@@ -404,13 +483,22 @@ self.addEventListener('message', function(event) {
         return cache.keys();
       })
       .then(function(keys) {
+        // Verificar específicamente los MP3
+        const audiosCacheados = keys.filter(function(key) {
+          const url = key.url || key;
+          return url.indexOf('.mp3') > -1;
+        });
+        
         const respuesta = {
           type: 'ESTADO_CACHE',
           total: keys.length,
+          audios: audiosCacheados.length,
           archivos: ES_DESARROLLO ? keys.map(function(k) { return k.url; }) : [],
           version: APP_VERSION,
           timestamp: new Date().toISOString()
         };
+        
+        console.log('📊 SW: Estado cache - Total:', keys.length, 'Audios:', audiosCacheados.length);
         
         if (event.ports && event.ports[0]) {
           event.ports[0].postMessage(respuesta);
@@ -429,12 +517,12 @@ self.addEventListener('message', function(event) {
   
   // FORZAR ACTUALIZACIÓN
   if (tipo === 'FORZAR_ACTUALIZACION') {
-    log('Forzando actualización del Service Worker');
+    console.log('🔄 SW: Forzando actualización');
     self.skipWaiting();
     
     self.clients.claim()
       .then(function() {
-        log('Actualización forzada completada');
+        console.log('✅ SW: Actualización forzada completada');
         
         if (event.ports && event.ports[0]) {
           event.ports[0].postMessage({
@@ -455,7 +543,7 @@ self.addEventListener('message', function(event) {
   if (tipo === 'LIMPIAR_CACHE') {
     caches.delete(CACHE_NAME)
       .then(function() {
-        log('Cache limpiado:', CACHE_NAME);
+        console.log('🗑️ SW: Cache limpiado:', CACHE_NAME);
         
         if (event.ports && event.ports[0]) {
           event.ports[0].postMessage({
@@ -476,7 +564,7 @@ self.addEventListener('message', function(event) {
               return cache.put(url, response);
             })
             .catch(function(err) {
-              warn('Error actualizando', url, ':', err);
+              console.warn('⚠️ SW: Error actualizando', url, ':', err);
             });
         });
         
@@ -494,11 +582,11 @@ self.addEventListener('message', function(event) {
 });
 
 // ==========================================
-// BACKGROUND SYNC (si está disponible)
+// BACKGROUND SYNC
 // ==========================================
 self.addEventListener('sync', function(event) {
   if (event.tag === 'sincronizar-pin') {
-    log('Sincronización background: PIN');
+    console.log('🔄 SW: Sincronización background PIN');
     event.waitUntil(sincronizarPINBackground());
   }
 });
@@ -514,7 +602,6 @@ function sincronizarPINBackground() {
       nuevoPIN = nuevoPIN.trim();
       
       if (/^\d{4}$/.test(nuevoPIN)) {
-        // Cachear PIN actualizado
         return caches.open(CACHE_NAME)
           .then(function(cache) {
             return cache.put(
@@ -529,9 +616,8 @@ function sincronizarPINBackground() {
             );
           })
           .then(function() {
-            log('PIN sincronizado en background:', nuevoPIN);
+            console.log('✅ SW: PIN sincronizado:', nuevoPIN);
             
-            // Notificar a las páginas
             return self.clients.matchAll()
               .then(function(clients) {
                 clients.forEach(function(client) {
@@ -549,13 +635,13 @@ function sincronizarPINBackground() {
       return Promise.resolve();
     })
     .catch(function(err) {
-      warn('Error sincronizando PIN en background:', err);
+      console.warn('⚠️ SW: Error sincronizando PIN:', err);
       return Promise.resolve();
     });
 }
 
 // ==========================================
-// PUSH NOTIFICATIONS (futuro)
+// PUSH NOTIFICATIONS
 // ==========================================
 self.addEventListener('push', function(event) {
   if (!event.data) {
@@ -603,150 +689,6 @@ self.addEventListener('notificationclick', function(event) {
 });
 
 // ==========================================
-// POLYFILL PARA NAVEGADORES ANTIGUOS
-// ==========================================
-if (typeof Promise === 'undefined') {
-  error('Promise no disponible - Service Worker no funcionará');
-}
-
-if (typeof caches === 'undefined') {
-  warn('Cache API no disponible - usando polyfill básico');
-  
-  // Polyfill básico con IndexedDB
-  self.caches = {
-    _db: null,
-    _dbName: 'sw-cache-fallback',
-    
-    _initDB: function() {
-      if (this._db) {
-        return Promise.resolve(this._db);
-      }
-      
-      return new Promise(function(resolve, reject) {
-        const request = indexedDB.open(self.caches._dbName, 1);
-        
-        request.onerror = function() {
-          reject(request.error);
-        };
-        
-        request.onsuccess = function() {
-          self.caches._db = request.result;
-          resolve(request.result);
-        };
-        
-        request.onupgradeneeded = function(event) {
-          const db = event.target.result;
-          if (!db.objectStoreNames.contains('cache')) {
-            db.createObjectStore('cache', { keyPath: 'url' });
-          }
-        };
-      });
-    },
-    
-    open: function(cacheName) {
-      return this._initDB().then(function(db) {
-        return {
-          match: function(request) {
-            return new Promise(function(resolve) {
-              const transaction = db.transaction(['cache'], 'readonly');
-              const store = transaction.objectStore('cache');
-              const url = typeof request === 'string' ? request : request.url;
-              const req = store.get(url);
-              
-              req.onsuccess = function() {
-                if (req.result) {
-                  resolve(new Response(req.result.data));
-                } else {
-                  resolve(null);
-                }
-              };
-              
-              req.onerror = function() {
-                resolve(null);
-              };
-            });
-          },
-          
-          put: function(request, response) {
-            return response.clone().arrayBuffer().then(function(data) {
-              return new Promise(function(resolve, reject) {
-                const transaction = db.transaction(['cache'], 'readwrite');
-                const store = transaction.objectStore('cache');
-                const url = typeof request === 'string' ? request : request.url;
-                
-                const entry = {
-                  url: url,
-                  data: data,
-                  timestamp: Date.now()
-                };
-                
-                const req = store.put(entry);
-                
-                req.onsuccess = function() {
-                  resolve();
-                };
-                
-                req.onerror = function() {
-                  reject(req.error);
-                };
-              });
-            });
-          },
-          
-          keys: function() {
-            return new Promise(function(resolve) {
-              const transaction = db.transaction(['cache'], 'readonly');
-              const store = transaction.objectStore('cache');
-              const req = store.getAllKeys();
-              
-              req.onsuccess = function() {
-                resolve(req.result.map(function(key) {
-                  return { url: key };
-                }));
-              };
-              
-              req.onerror = function() {
-                resolve([]);
-              };
-            });
-          },
-          
-          delete: function(request) {
-            return new Promise(function(resolve) {
-              const transaction = db.transaction(['cache'], 'readwrite');
-              const store = transaction.objectStore('cache');
-              const url = typeof request === 'string' ? request : request.url;
-              const req = store.delete(url);
-              
-              req.onsuccess = function() {
-                resolve(true);
-              };
-              
-              req.onerror = function() {
-                resolve(false);
-              };
-            });
-          }
-        };
-      });
-    },
-    
-    keys: function() {
-      return Promise.resolve([CACHE_NAME]);
-    },
-    
-    delete: function() {
-      return Promise.resolve(true);
-    }
-  };
-}
-
-// ==========================================
 // LOG INICIAL
 // ==========================================
-log('Service Worker cargado', {
-  version: APP_VERSION,
-  cache: CACHE_NAME,
-  modo: ES_DESARROLLO ? 'desarrollo' : 'producción',
-  archivos: ARCHIVOS_CRITICOS.length
-});
+console.log('🔔 SW v' + APP_VERSION + ' cargado - ' + ARCHIVOS_CRITICOS.length + ' archivos a cachear');
