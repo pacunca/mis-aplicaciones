@@ -905,8 +905,8 @@ function playAudio(archivo) {
         };
         
         audioActual.onerror = function(e) {
-            error('❌ Error cargando audio:', archivo, e);
-            mostrarNotificacion('Error reproduciendo audio');
+            error('❌ Cargando audio:', archivo, e);
+            mostrarNotificacion('Reproduciendo audio');
             detenerSonido();
             
             if ('caches' in window && servicioWorkerActivo) {
